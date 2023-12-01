@@ -46,7 +46,7 @@ $setglobal datafolderpath "."
 $setglobal codefolderpath "../../../../resources/4_model_code_shared"
 
 $setglobal log "test_log"
-$setglobal gdx2sql "ON"
+$setglobal gdx2sql "OFF"
 $setglobal cplex_opt_file "1"
 
 $setglobal storage "ON"
@@ -497,7 +497,7 @@ eq_costs_gen_start(z) .. costs_gen_start(z) =E= sum((h,non_vre)$(gen_uc_int(non_
 
 $endIf
 
-$ifThen "%pen_gen%" == ON 
+$ifThen "%pen_gen%" == ON
 
 eq_pen_gen(z).. costs_pgen(z) =E= sum((h),var_pgen(h,z)*pgen);
 
