@@ -138,7 +138,7 @@ gen_maxramp(non_vre)=gen_maxramp(non_vre)/MWtoGW;
 
 * Existing VRE capacity aggregated to zones
 
-exist_vre_cap_r(vre,z,r) = 0.0;
+* exist_vre_cap_r(vre,z,r) = 0.0;
 
 $ontext
 gen_exist_pcap_z(z,vre,"FX")=sum(r,exist_vre_cap_r(vre,z,r));
@@ -155,13 +155,13 @@ gen_exist_cap(g)=sum((z,lt),gen_exist_pcap_z(z,g,lt));
 * and onshore offshore wind.
 
 set vre_lim(vre,z,r);
-vre_lim(vre,z,r)=((area(vre,z,r)+exist_vre_cap_r(vre,z,r))>0.);
+vre_lim(vre,z,r)=((area(vre,z,r)+sum(lt,gen_exist_pcap_r(vre,z,r,lt)))>0.);
 
 * Non VRE cap lim to dynamic set, stops Nuclear being built in certain countries (e.g. Austria)
 
 set gen_lim(z,g);
 gen_lim(z,non_vre)=((sum(lt,gen_lim_pcap_z(z,non_vre,lt))+sum(lt,gen_exist_pcap_z(z,non_vre,lt)))>0.);
-gen_lim(z,vre)=(sum(r,(area(vre,z,r)+exist_vre_cap_r(vre,z,r)))>0.);
+gen_lim(z,vre)=(sum(r,(area(vre,z,r)+sum(lt,gen_exist_pcap_r(vre,z,r,lt))))>0.);
 
 
 sets
@@ -221,7 +221,7 @@ area(vre,z,r)=area(vre,z,r)$(vre_lim(vre,z,r))*gen_cap2area(vre);
 
 * To be conservative, existing capacity is removed from new capacity limit
 
-area(vre,z,r)=area(vre,z,r)-exist_vre_cap_r(vre,z,r);
+area(vre,z,r)=area(vre,z,r)-sum(lt,gen_exist_pcap_r(vre,z,r,lt));
 area(vre,z,r)$(area(vre,z,r)<0.) = 0.  ;
 
 * Fuel, varom and emission costs for non VRE gens;
@@ -341,7 +341,7 @@ var_exist_pcap_z.UP(z,g)$(gen_exist_pcap_z(z,g,"UP")) = gen_exist_pcap_z(z,g,"UP
 var_exist_pcap_z.LO(z,g)$(gen_exist_pcap_z(z,g,"LO")) = gen_exist_pcap_z(z,g,"LO");
 var_exist_pcap_z.FX(z,g)$(gen_exist_pcap_z(z,g,"FX")) = gen_exist_pcap_z(z,g,"FX");
 
-var_exist_pcap_z.UP(z,g)$(not (sum(lt,gen_exist_pcap_z(z,g,lt)) > 0.)) = 0.0;
+
 
 
 var_tot_pcap_z.UP(z,g)$(gen_lim_pcap_z(z,g,'UP'))=gen_lim_pcap_z(z,g,'UP');
@@ -349,7 +349,16 @@ var_tot_pcap_z.LO(z,g)$(gen_lim_pcap_z(z,g,'LO'))=gen_lim_pcap_z(z,g,'LO');
 var_tot_pcap_z.FX(z,g)$(gen_lim_pcap_z(z,g,'FX'))=gen_lim_pcap_z(z,g,'FX');
 
 
-*var_vre_pcap_r.LO(z,vre,r)$(exist_vre_cap_r(vre,z,r))=exist_vre_cap_r(vre,z,r);
+var_exist_vre_pcap_r.UP(z,vre,r)$(gen_exist_pcap_r(vre,z,r,"UP"))=gen_exist_pcap_r(vre,z,r,"UP");
+var_exist_vre_pcap_r.LO(z,vre,r)$(gen_exist_pcap_r(vre,z,r,"LO"))=gen_exist_pcap_r(vre,z,r,"LO");
+var_exist_vre_pcap_r.FX(z,vre,r)$(gen_exist_pcap_r(vre,z,r,"FX"))=gen_exist_pcap_r(vre,z,r,"FX");
+
+* turn off the potential for any existing capacity that is not given to the model
+
+parameter gen_exist_r_on(z,g);
+gen_exist_r_on(z,vre)=sum((r,lt),gen_exist_pcap_r(vre,z,r,lt));
+
+var_exist_pcap_z.UP(z,g)$(not (sum(lt,gen_exist_pcap_z(z,g,lt)) > 0. or gen_exist_r_on(z,g) > 0.)) = 0.0;
 
 $IF "%fx_natcap%" == YES var_new_pcap.FX(g)$(gen_fx_natcap(g))=gen_fx_natcap(g);
 
@@ -630,7 +639,6 @@ eq_trans_bidirect(trans_links(z,z_alias,trans)) ..  var_trans_pcap(z,z_alias,tra
 ***********************
 
 * Emissions limit - European average
-
 
 eq_co2_budget(yr) .. sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)*gen_emisfac(non_vre))*1E3 =L=
 

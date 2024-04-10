@@ -45,6 +45,7 @@ parameter gen_lim_pcap_z(z,g,lt);
 parameter gen_lim_ecap_z(z,g,lt);
 parameter gen_exist_pcap_z(z,g,lt);
 parameter gen_exist_ecap_z(z,g,lt);
+parameter gen_exist_pcap_r(vre,z,r,lt);									   
 parameter gen_fx_natcap(g);
 
 parameter gen_unitsize(non_vre);
@@ -86,7 +87,4 @@ $load vre_gen
 *gen_capex(g)=gen_capex%model_yr%(g);
 *gen_fuelcost(g)=gen_fuelcost%model_yr%(g);
 
-parameter exist_vre_cap_r(vre,z,r);
-
-*$BATINCLUDE %datafolderpath%/vre_per_zone_2016.dd
 
