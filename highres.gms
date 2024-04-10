@@ -37,7 +37,7 @@ $offdigit
 * fx_trans (YES/NO) = fix transmission network to input values
 * fx_natcap (YES/NO) = fix total national capacities ->  let highRES decide where to place them
 
-* pen_gen (ON/OFF) = weather VoLL is modelled
+* pen_gen (ON/OFF) = whether value of lost load (VoLL) is modelled
 * fx_caps_to = file containing capacities to fix the system to
 
 * outname = output name of GDX file
