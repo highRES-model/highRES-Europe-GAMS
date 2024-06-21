@@ -20,7 +20,7 @@ $INCLUDE %datafolderpath%/%weather_yr%_temporal.dd
 
 alias(h,h_alias);
 
-alias(z,z_alias) ;
+alias(z,z_alias);
 
 
 * these sets have to be read in here, they can't be read in at the same time as
