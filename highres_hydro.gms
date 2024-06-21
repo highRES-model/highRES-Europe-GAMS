@@ -79,7 +79,7 @@ hlast(h) last hour
 hfirst(h) = yes$(ord(h) eq 1);
 hlast(h) = yes$(ord(h) eq card (h));
 
-* how full are the reservoirs at the start and end (%)
+* how full are the reservoirs at the start and end (decimal fraction or %/100)
 
 scalar hydro_res_initial_fill /0.8/;
 
