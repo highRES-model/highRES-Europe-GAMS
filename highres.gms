@@ -46,6 +46,8 @@ $offdigit
 * fx_caps_to = file containing capacities to fix the system to
 
 * outname = output name of GDX file
+* co2intensity = Carbon dioxide emission intensity the model is allowed to
+*                   produce
 
 $setglobal datafolderpath "."
 $setglobal codefolderpath "../../../../resources/4_model_code_shared"
@@ -83,6 +85,7 @@ $set pen_gen "OFF"
 $setglobal fx_caps_to ""
 
 $setglobal outname "results"
+$setglobal co2intensity "2"
 
 
 
@@ -702,7 +705,7 @@ eq_trans_bidirect(trans_links(z,z_alias,trans))..
 eq_co2_budget(yr)..
     sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)
         *gen_emisfac(non_vre))*1E3
-    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*2.
+    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*%co2intensity%
 
 
 * Capacity Margin
