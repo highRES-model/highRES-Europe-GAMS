@@ -15,18 +15,22 @@ $offdigit
 * Switches:
 
 * log = text file to store details about model run time, optimality or not, etc.
-* gdx2sql (ON/OFF) = whether to convert output GDX to sqlite database -> easier to read into Python
-* cplex_opt_file = set which cplex option file to use, if "1" then use default cplex.opt
+* gdx2sql (ON/OFF) = whether to convert output GDX to sqlite database -> easier
+*                       to read into Python
+* cplex_opt_file = set which cplex option file to use, if "1" then use default
+*                   cplex.opt
 * storage (ON/OFF) = should storage be included in the model run
 * hydrores (ON/OFF) = should reservoir hydro be incliuded in the model run
 * UC (ON/OFF) = unit committment switch
 * f_res (ON/OFF) = should frequency response requirements be modelled
-* water (ON/OFF) = model technologies with a water footprint (currently disabled)
+* water (ON/OFF) = model technologies with a water footprint (currently
+*                   disabled)
 * sensitivity (ON/OFF) = whether a sensitivity file is available
 * GWatts (YES/NO) = model is run in GW (YES) or MW (NO)
 
 * sense_run = sensitivity file identifier
-* esys_scen = energy system scenario (sets the carbon budget and demands to be used)
+* esys_scen = energy system scenario (sets the carbon budget and demands to be
+*               used)
 * psys_scen = power system scenario (sets which technologies are available)
 * RPS = renewable portfolio standard
 * vre_restrict = VRE land use deployment scenario name
@@ -35,15 +39,18 @@ $offdigit
 * dem_yr = which demand year do we use
 
 * fx_trans (YES/NO) = fix transmission network to input values
-* fx_natcap (YES/NO) = fix total national capacities ->  let highRES decide where to place them
+* fx_natcap (YES/NO) = fix total national capacities ->  let highRES decide
+*                          where to place them
 
 * pen_gen (ON/OFF) = whether value of lost load (VoLL) is modelled
 * fx_caps_to = file containing capacities to fix the system to
 
 * outname = output name of GDX file
+* co2intensity = Carbon dioxide emission intensity the model is allowed to
+*                   produce
 
 $setglobal datafolderpath "."
-$setglobal codefolderpath "../../../../resources/4_model_code_shared"
+$setglobal codefolderpath "../../../../resources/highRES-Europe-GAMS"
 
 $setglobal log "test_log"
 $setglobal gdx2sql "OFF"
@@ -78,6 +85,7 @@ $set pen_gen "OFF"
 $setglobal fx_caps_to ""
 
 $setglobal outname "results"
+$setglobal co2intensity "2"
 
 
 
@@ -157,10 +165,12 @@ gen_exist_cap(g)=sum((z,lt),gen_exist_pcap_z(z,g,lt));
 set vre_lim(vre,z,r);
 vre_lim(vre,z,r)=((area(vre,z,r)+sum(lt,gen_exist_pcap_r(vre,z,r,lt)))>0.);
 
-* Non VRE cap lim to dynamic set, stops Nuclear being built in certain countries (e.g. Austria)
+* Non VRE cap lim to dynamic set, stops Nuclear being built in certain countries
+*   (e.g. Austria)
 
 set gen_lim(z,g);
-gen_lim(z,non_vre)=((sum(lt,gen_lim_pcap_z(z,non_vre,lt))+sum(lt,gen_exist_pcap_z(z,non_vre,lt)))>0.);
+gen_lim(z,non_vre)=((sum(lt,gen_lim_pcap_z(z,non_vre,lt))
+    +sum(lt,gen_exist_pcap_z(z,non_vre,lt)))>0.);
 gen_lim(z,vre)=(sum(r,(area(vre,z,r)+sum(lt,gen_exist_pcap_r(vre,z,r,lt))))>0.);
 
 
@@ -187,7 +197,8 @@ gen_quick("NaturalgasOCGTnew")=YES;
 
 * generators that are represented as continous linear capacity chunks
 
-gen_lin(z,non_vre)=not ((gen_uc_lin(non_vre) or gen_uc_int(non_vre)) and uc_z(z));
+gen_lin(z,non_vre)=not ((gen_uc_lin(non_vre) or gen_uc_int(non_vre)) and
+    uc_z(z));
 
 * generators that are continous linear chunks can have a mingen of 0
 
@@ -209,9 +220,11 @@ $endIf
 
 * Sets to ensure ramp/mingen constraints are only created where relevant
 
-ramp_on(z,non_vre)=((gen_maxramp(non_vre)*60./gen_unitsize(non_vre)) < 1.0 and gen_lim(z,non_vre) and gen_lin(z,non_vre) and gen_unitsize(non_vre) > 0.);
+ramp_on(z,non_vre)=((gen_maxramp(non_vre)*60./gen_unitsize(non_vre)) < 1.0 and
+    gen_lim(z,non_vre) and gen_lin(z,non_vre) and gen_unitsize(non_vre) > 0.);
 
-mingen_on(z,non_vre)=(gen_mingen_lin(non_vre) > 0. and gen_lim(z,non_vre) and gen_lin(z,non_vre));
+mingen_on(z,non_vre)=(gen_mingen_lin(non_vre) > 0. and gen_lim(z,non_vre) and
+    gen_lin(z,non_vre));
 
 ramp_and_mingen(z,non_vre) = (ramp_on(z,non_vre) or mingen_on(z,non_vre));
 
@@ -222,11 +235,12 @@ area(vre,z,r)=area(vre,z,r)$(vre_lim(vre,z,r))*gen_cap2area(vre);
 * To be conservative, existing capacity is removed from new capacity limit
 
 area(vre,z,r)=area(vre,z,r)-sum(lt,gen_exist_pcap_r(vre,z,r,lt));
-area(vre,z,r)$(area(vre,z,r)<0.) = 0.  ;
+area(vre,z,r)$(area(vre,z,r)<0.) = 0.;
 
 * Fuel, varom and emission costs for non VRE gens;
 
-gen_varom(non_vre)=gen_fuelcost(non_vre)+gen_emisfac(non_vre)*emis_price+gen_varom(non_vre);
+gen_varom(non_vre)=gen_fuelcost(non_vre)+gen_emisfac(non_vre)*emis_price+
+    gen_varom(non_vre);
 
 
 * Penalty generation setup
@@ -276,26 +290,33 @@ costs_trans_fom(z)
 $IF "%pen_gen%" == ON costs_pgen(z)
 
 Positive variables
-var_new_pcap(g)                          new generation capacity at national level
-var_new_pcap_z(z,g)                      new generation capacity at zonal level
-var_exist_pcap(g)                        existing generation capacity at national level
-var_exist_pcap_z(z,g)                    existing generation capacity at zonal level
-var_tot_pcap(g)                          total generation capacity at national level
-var_tot_pcap_z(z,g)                      total generation capacity at zonal level
-var_gen(h,z,g)                           generation by hour and technology
-var_new_vre_pcap_r(z,vre,r)              new VRE capacity at grid cell level by technology and zone
-var_exist_vre_pcap_r(z,vre,r)            existing VRE capacity at grid cell level by technology and zone
-var_vre_gen_r(h,z,vre,r)                 VRE generation at grid cell level by hour zone and technology
-var_vre_curtail(h,z,vre,r)               VRE power curtailed
+var_new_pcap(g)                    new generation capacity at national level
+var_new_pcap_z(z,g)                new generation capacity at zonal level
+var_exist_pcap(g)                  existing generation capacity at national
+*                                  level
+var_exist_pcap_z(z,g)              existing generation capacity at zonal level
+var_tot_pcap(g)                    total generation capacity at national level
+var_tot_pcap_z(z,g)                total generation capacity at zonal level
+var_gen(h,z,g)                     generation by hour and technology
+var_new_vre_pcap_r(z,vre,r)        new VRE capacity at grid cell level by
+*                                  technology and zone
+var_exist_vre_pcap_r(z,vre,r)      existing VRE capacity at grid cell level by
+*                                  technology and zone
+var_vre_gen_r(h,z,vre,r)           VRE generation at grid cell level by hour
+*                                  zone and technology
+var_vre_curtail(h,z,vre,r)         VRE power curtailed
 *var_non_vre_curtail(z,h,non_vre)
-var_trans_flow(h,z,z_alias,trans)        Flow of electricity from node to node by hour (MW)
-var_trans_pcap(z,z_alias,trans)          Capacity of node to node transmission links (MW)
+var_trans_flow(h,z,z_alias,trans)  Flow of electricity from node to node by hour
+*                                  (MW)
+var_trans_pcap(z,z_alias,trans)    Capacity of node to node transmission links
+*                                  (MW)
 
-var_pgen(h,z)                            Penalty generation
+var_pgen(h,z)                      Penalty generation
 
 ;
 
-* Synchronous condensers can have negative generation - they require energy to function
+* Synchronous condensers can have negative generation - they require energy to
+*   function
 
 * var_gen.LO(h,z,"SynCon")=-inf;
 
@@ -303,25 +324,29 @@ var_pgen(h,z)                            Penalty generation
 
 * Sets up bidirectionality of links
 
-trans_links(z_alias,z,trans)$(trans_links(z,z_alias,trans))=trans_links(z,z_alias,trans);
+trans_links(z_alias,z,trans)$(trans_links(z,z_alias,trans))
+    =trans_links(z,z_alias,trans);
 
-trans_links_cap(z_alias,z,trans)$(trans_links_cap(z,z_alias,trans) > 0.)=trans_links_cap(z,z_alias,trans);
+trans_links_cap(z_alias,z,trans)$(trans_links_cap(z,z_alias,trans) > 0.)
+    =trans_links_cap(z,z_alias,trans);
 
 trans_links_dist(z,z_alias,trans)=trans_links_dist(z,z_alias,trans)/100.;
 
-* Bidirectionality of link distances for import flow reduction -> both monodir and bidir needed,
-* former for capex.
+* Bidirectionality of link distances for import flow reduction -> both monodir
+*   and bidir needed, former for capex.
 
 parameter trans_links_dist_bidir(z,z_alias,trans);
 
 trans_links_dist_bidir(z,z_alias,trans)=trans_links_dist(z,z_alias,trans);
-trans_links_dist_bidir(z_alias,z,trans)$(trans_links_dist(z,z_alias,trans) > 0.)=trans_links_dist(z,z_alias,trans);
+trans_links_dist_bidir(z_alias,z,trans)$(trans_links_dist(z,z_alias,trans) > 0.)
+    =trans_links_dist(z,z_alias,trans);
 
 * Set transmission capacities to historic
 
 $ifThen "%fx_trans%" == "YES"
 
-var_trans_pcap.FX(z,z_alias,trans)$(trans_links(z,z_alias,trans)) = trans_links_cap(z,z_alias,trans);
+var_trans_pcap.FX(z,z_alias,trans)$(trans_links(z,z_alias,trans))
+    = trans_links_cap(z,z_alias,trans);
 
 $else
 
@@ -335,12 +360,17 @@ $endIf
 
 *******************************
 
-var_exist_pcap_z.UP(z,g)$(gen_exist_pcap_z(z,g,"UP")) = gen_exist_pcap_z(z,g,"UP");
-*var_exist_pcap_z.L(z,g)$(gen_exist_pcap_z(z,g,"UP")) = gen_exist_pcap_z(z,g,"UP");
+var_exist_pcap_z.UP(z,g)$(gen_exist_pcap_z(z,g,"UP"))
+    = gen_exist_pcap_z(z,g,"UP");
+*var_exist_pcap_z.L(z,g)$(gen_exist_pcap_z(z,g,"UP"))
+*    = gen_exist_pcap_z(z,g,"UP");
 
-var_exist_pcap_z.LO(z,g)$(gen_exist_pcap_z(z,g,"LO")) = gen_exist_pcap_z(z,g,"LO");
-var_exist_pcap_z.FX(z,g)$(gen_exist_pcap_z(z,g,"FX")) = gen_exist_pcap_z(z,g,"FX");
+var_exist_pcap_z.LO(z,g)$(gen_exist_pcap_z(z,g,"LO"))
+    = gen_exist_pcap_z(z,g,"LO");
+var_exist_pcap_z.FX(z,g)$(gen_exist_pcap_z(z,g,"FX"))
+    = gen_exist_pcap_z(z,g,"FX");
 
+var_exist_pcap_z.UP(z,g)$(not (sum(lt,gen_exist_pcap_z(z,g,lt)) > 0.)) = 0.0;
 
 
 
@@ -365,22 +395,22 @@ $IF "%fx_natcap%" == YES var_new_pcap.FX(g)$(gen_fx_natcap(g))=gen_fx_natcap(g);
 
 
 $ifThen "%UC%" == ON
+* parameters for UC, used by both gen and storage UC so needs to be defined
+*   here
 
-* parameters for UC, used by both gen and storage UC so needs to be defined here
+    scalars
+    f_res_time      frequency response ramp up window (minutes)    / 0.083 /
+    res_time        operating reserve ramp up window (minutes)     / 20. /
+    unit_cap_lim_z  limit the maximum capacity of each units deployed in each
+        zone (MW)                                                  /50000./
+    res_margin      operating reserve margin (fraction of demand)  / 0.1 /
+    ;
 
-scalars
-f_res_time                               frequency response ramp up window (minutes)                             /0.083/
-res_time                                 operating reserve ramp up window (minutes)                              /20./
-unit_cap_lim_z                           limit the maximum capacity of each units deployed in each zone (MW)     /50000./
-res_margin                               operating reserve margin (fraction of demand)                           / 0.1 /
-;
-
-sets
-service_type                             ancillary service type                                                  /f_response, reserve/
-hh_minup(h) max minup hours / 0*23 /
-hh_mindown(h) /0*7/;
-;
-
+    sets
+    service_type    ancillary service type                / f_response, reserve/
+    hh_minup(h)     max minup hours                       / 0*23 /
+    hh_mindown(h)                                         / 0*7 /;
+    ;
 $endIf
 
 $IF "%store_uc%" == ON $INCLUDE %codefolderpath%/highres_storage_uc_setup.gms
@@ -493,37 +523,55 @@ $IF "%pen_gen%" == ON +costs_pgen(z)
 +costs_trans_fom(z));
 
 
-eq_costs_gen_capex(z) .. costs_gen_capex(z) =E= sum(g,var_new_pcap_z(z,g)*gen_capex(g));
+eq_costs_gen_capex(z)..
+    costs_gen_capex(z) =E= sum(g,var_new_pcap_z(z,g)*gen_capex(g));
 
-eq_costs_gen_fom(z) .. costs_gen_fom(z) =E= sum(g,var_new_pcap_z(z,g)*gen_fom(g))+sum(g,var_exist_pcap_z(z,g)*gen_fom(g));
+eq_costs_gen_fom(z)..
+    costs_gen_fom(z) =E= sum(g,var_new_pcap_z(z,g)*gen_fom(g))
+                            +sum(g,var_exist_pcap_z(z,g)*gen_fom(g));
 
-eq_costs_gen_varom(z) .. costs_gen_varom(z) =E= sum((h,gen_lim(z,g)),var_gen(h,z,g)*gen_varom(g));
+eq_costs_gen_varom(z)..
+    costs_gen_varom(z) =E= sum((h,gen_lim(z,g)),var_gen(h,z,g)*gen_varom(g));
 
 $ifThen "%UC%" == ON
-
-eq_costs_gen_start(z) .. costs_gen_start(z) =E= sum((h,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre)),var_up_units(h,z,non_vre)*gen_startupcost(non_vre))
-+sum((h,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)),var_up_units_lin(h,z,non_vre)*gen_startupcost(non_vre));
-
+    eq_costs_gen_start(z)..
+        costs_gen_start(z) =E= sum((h,non_vre)$(gen_uc_int(non_vre) and
+            gen_lim(z,non_vre)),var_up_units(h,z,non_vre)
+            *gen_startupcost(non_vre))
+        +sum((h,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)),
+            var_up_units_lin(h,z,non_vre)*gen_startupcost(non_vre));
 $endIf
 
 $ifThen "%pen_gen%" == ON
-
-eq_pen_gen(z).. costs_pgen(z) =E= sum((h),var_pgen(h,z)*pgen);
-
+    eq_pen_gen(z)..
+        costs_pgen(z) =E= sum((h),var_pgen(h,z)*pgen);
 $endIf
 
-eq_costs_store_capex(z) .. costs_store_capex(z) =E= sum(s,var_new_store_pcap_z(z,s)*store_pcapex(s)+var_new_store_ecap_z(z,s)*store_ecapex(s));
+eq_costs_store_capex(z)..
+    costs_store_capex(z) =E= sum(s,var_new_store_pcap_z(z,s)*store_pcapex(s)
+        +var_new_store_ecap_z(z,s)*store_ecapex(s));
 
-eq_costs_store_fom(z) .. costs_store_fom(z) =E= sum(s,var_exist_store_pcap_z(z,s)*store_fom(s))+sum(s,var_new_store_pcap_z(z,s)*store_fom(s));
+eq_costs_store_fom(z)..
+    costs_store_fom(z) =E= sum(s,var_exist_store_pcap_z(z,s)*store_fom(s))
+        +sum(s,var_new_store_pcap_z(z,s)*store_fom(s));
 
-eq_costs_store_varom(z) .. costs_store_varom(z) =E= sum((h,s)$s_lim(z,s),var_store_gen(h,z,s)*store_varom(s));
+eq_costs_store_varom(z)..
+    costs_store_varom(z) =E= sum((h,s)$s_lim(z,s),var_store_gen(h,z,s)
+        *store_varom(s));
 
-$IF "%store_uc%" == ON eq_costs_store_start(z) .. costs_store_start(z) =E= sum((h,s_lim(z,store_uc_lin)),var_store_up_units_lin(h,z,store_uc_lin)*store_startupcost(store_uc_lin));
+$IF "%store_uc%" == ON eq_costs_store_start(z)..
+$IF "%store_uc%" == ON     costs_store_start(z) =E= sum(
+$IF "%store_uc%" == ON          (h,s_lim(z,store_uc_lin)),
+$IF "%store_uc%" == ON          var_store_up_units_lin(h,z,store_uc_lin)
+$IF "%store_uc%" == ON          *store_startupcost(store_uc_lin));
 
-eq_costs_trans_capex(z) .. costs_trans_capex(z) =E=
-
-sum(trans_links(z,z_alias,trans),var_trans_pcap(z,z_alias,trans)*trans_links_dist(z,z_alias,trans)*trans_line_capex(trans))
-+sum(trans_links(z,z_alias,trans),var_trans_pcap(z,z_alias,trans)$(trans_links_dist(z,z_alias,trans))*trans_sub_capex(trans)*2);
+eq_costs_trans_capex(z)..
+    costs_trans_capex(z) =E= sum(trans_links(z,z_alias,trans),
+        var_trans_pcap(z,z_alias,trans)*trans_links_dist(z,z_alias,trans)
+        *trans_line_capex(trans))
+    +sum(trans_links(z,z_alias,trans),
+        var_trans_pcap(z,z_alias,trans)$(trans_links_dist(z,z_alias,trans))
+        *trans_sub_capex(trans)*2);
 
 * assume 2% fom costs for transmission
 
@@ -545,7 +593,8 @@ sum(gen_lim(z,g),var_gen(h,z,g))
 
 * Transmission, import-export
 -sum(trans_links(z,z_alias,trans),var_trans_flow(h,z_alias,z,trans))
-+sum(trans_links(z,z_alias,trans),var_trans_flow(h,z,z_alias,trans)*(1-(trans_links_dist_bidir(z,z_alias,trans)*trans_loss(trans))))
++sum(trans_links(z,z_alias,trans),var_trans_flow(h,z,z_alias,trans)*
+    (1-(trans_links_dist_bidir(z,z_alias,trans)*trans_loss(trans))))
 
 $ifThen "%storage%" == ON
 
@@ -566,13 +615,17 @@ $IF "%pen_gen%" == ON +var_pgen(h,z)
 
 *** Capacity balance ***
 
-eq_new_pcap (g) .. sum(gen_lim(z,g),var_new_pcap_z(z,g)) =E= var_new_pcap(g);
+eq_new_pcap (g)..
+    sum(gen_lim(z,g),var_new_pcap_z(z,g)) =E= var_new_pcap(g);
 
-eq_exist_pcap(g) .. sum(gen_lim(z,g),var_exist_pcap_z(z,g)) =E= var_exist_pcap(g);
+eq_exist_pcap(g)..
+    sum(gen_lim(z,g),var_exist_pcap_z(z,g)) =E= var_exist_pcap(g);
 
-eq_tot_pcap_z(z,g) .. var_new_pcap_z(z,g) + var_exist_pcap_z(z,g) =E= var_tot_pcap_z(z,g);
+eq_tot_pcap_z(z,g)..
+    var_new_pcap_z(z,g) + var_exist_pcap_z(z,g) =E= var_tot_pcap_z(z,g);
 
-eq_tot_pcap(g) .. sum(z,var_tot_pcap_z(z,g)) =E= var_tot_pcap(g);
+eq_tot_pcap(g)..
+    sum(z,var_tot_pcap_z(z,g)) =E= var_tot_pcap(g);
 
 *********************
 *** VRE equations ***
@@ -580,19 +633,27 @@ eq_tot_pcap(g) .. sum(z,var_tot_pcap_z(z,g)) =E= var_tot_pcap(g);
 
 * VRE generation is input data x capacity in each region
 
-eq_gen_vre_r(h,vre_lim(vre,z,r)) .. var_vre_gen_r(h,z,vre,r) =L= vre_gen(h,vre,r)*(var_new_vre_pcap_r(z,vre,r)+var_exist_vre_pcap_r(z,vre,r));
+eq_gen_vre_r(h,vre_lim(vre,z,r))..
+    var_vre_gen_r(h,z,vre,r) =L= vre_gen(h,vre,r)*(var_new_vre_pcap_r(z,vre,r)
+        +var_exist_vre_pcap_r(z,vre,r));
 
 * VRE gen at regional level aggregated to zonal level
 
-eq_gen_vre(h,z,vre) .. var_gen(h,z,vre) =E= sum(vre_lim(vre,z,r),var_vre_gen_r(h,z,vre,r));
+eq_gen_vre(h,z,vre)..
+    var_gen(h,z,vre) =E= sum(vre_lim(vre,z,r),var_vre_gen_r(h,z,vre,r));
 
-* VRE capacity across all regions in a zone must be equal to capacity in that zone
+* VRE capacity across all regions in a zone must be equal to capacity in that
+*   zone
 
-eq_new_vre_pcap_z(z,vre) .. sum(vre_lim(vre,z,r),var_new_vre_pcap_r(z,vre,r)) =E= var_new_pcap_z(z,vre);
+eq_new_vre_pcap_z(z,vre)..
+    sum(vre_lim(vre,z,r),var_new_vre_pcap_r(z,vre,r)) =E= var_new_pcap_z(z,vre);
 
-eq_exist_vre_pcap_z(z,vre) .. sum(vre_lim(vre,z,r),var_exist_vre_pcap_r(z,vre,r)) =E= var_exist_pcap_z(z,vre);
+eq_exist_vre_pcap_z(z,vre)..
+    sum(vre_lim(vre,z,r),var_exist_vre_pcap_r(z,vre,r))
+    =E= var_exist_pcap_z(z,vre);
 
-* VRE capacity in each region must be less than or equal to buildable MW as governed by buildable area for each technology in that region
+* VRE capacity in each region must be less than or equal to buildable MW as
+*   governed by buildable area for each technology in that region
 
 eq_area_max(vre_lim(vre,z,r)) .. var_new_vre_pcap_r(z,vre,r) =L= area(vre,z,r);
 
@@ -603,22 +664,29 @@ eq_area_max(vre_lim(vre,z,r)) .. var_new_vre_pcap_r(z,vre,r) =L= area(vre,z,r);
 
 * Maximum generation of Non VRE
 
-eq_gen_max(gen_lim(z,non_vre),h)$(gen_lin(z,non_vre)) .. var_tot_pcap_z(z,non_vre)*gen_af(non_vre) =G= var_gen(h,z,non_vre) ;
+eq_gen_max(gen_lim(z,non_vre),h)$(gen_lin(z,non_vre))..
+    var_tot_pcap_z(z,non_vre)*gen_af(non_vre) =G= var_gen(h,z,non_vre);
 
 * Minimum generation of Non VRE
 
-eq_gen_min(mingen_on(z,non_vre),h)$(gen_lin(z,non_vre)) .. var_gen(h,z,non_vre) =G= var_tot_pcap_z(z,non_vre)*gen_mingen_lin(non_vre);
+eq_gen_min(mingen_on(z,non_vre),h)$(gen_lin(z,non_vre))..
+    var_gen(h,z,non_vre) =G= var_tot_pcap_z(z,non_vre)*gen_mingen_lin(non_vre);
 
-* Ramp equations applied to Non VRE generation, characterised as fraction of total installed
-* capacity per hour
+* Ramp equations applied to Non VRE generation, characterised as fraction of
+*   total installed capacity per hour
 
-eq_ramp_up(h,ramp_on(z,non_vre))$(gen_lin(z,non_vre)) .. var_gen(h,z,non_vre) =L= var_gen(h-1,z,non_vre)+(gen_maxramp(non_vre)*60./gen_unitsize(non_vre))*var_tot_pcap_z(z,non_vre) ;
+eq_ramp_up(h,ramp_on(z,non_vre))$(gen_lin(z,non_vre))..
+    var_gen(h,z,non_vre) =L= var_gen(h-1,z,non_vre)
+    +(gen_maxramp(non_vre)*60./gen_unitsize(non_vre))*var_tot_pcap_z(z,non_vre);
 
-eq_ramp_down(h,ramp_on(z,non_vre))$(gen_lin(z,non_vre)) .. var_gen(h,z,non_vre) =G= var_gen(h-1,z,non_vre)-(gen_maxramp(non_vre)*60./gen_unitsize(non_vre))*var_tot_pcap_z(z,non_vre) ;
+eq_ramp_down(h,ramp_on(z,non_vre))$(gen_lin(z,non_vre))..
+    var_gen(h,z,non_vre) =G= var_gen(h-1,z,non_vre)
+    -(gen_maxramp(non_vre)*60./gen_unitsize(non_vre))*var_tot_pcap_z(z,non_vre);
 
 * Non VRE curtailment due to ramping/min generation
 
-*eq_curtail_max_non_vre(ramp_and_mingen(z,non_vre),h) .. var_non_vre_curtail(z,h,non_vre) =L= var_non_vre_gen(z,h,non_vre);
+*eq_curtail_max_non_vre(ramp_and_mingen(z,non_vre),h)..
+*   var_non_vre_curtail(z,h,non_vre) =L= var_non_vre_gen(z,h,non_vre);
 
 
 ******************************
@@ -627,11 +695,14 @@ eq_ramp_down(h,ramp_on(z,non_vre))$(gen_lin(z,non_vre)) .. var_gen(h,z,non_vre) 
 
 * Transmitted electricity each hour must not exceed transmission capacity
 
-eq_trans_flow(h,trans_links(z,z_alias,trans)) .. var_trans_flow(h,z,z_alias,trans) =L= var_trans_pcap(z,z_alias,trans);
+eq_trans_flow(h,trans_links(z,z_alias,trans))..
+    var_trans_flow(h,z,z_alias,trans) =L= var_trans_pcap(z,z_alias,trans);
 
-* Bidirectionality equation is needed when investments into new links are made...I think :)
+* Bidirectionality equation is needed when investments into new links are made
+*   ...I think :)
 
-eq_trans_bidirect(trans_links(z,z_alias,trans)) ..  var_trans_pcap(z,z_alias,trans) =E= var_trans_pcap(z_alias,z,trans);
+eq_trans_bidirect(trans_links(z,z_alias,trans))..
+    var_trans_pcap(z,z_alias,trans) =E= var_trans_pcap(z_alias,z,trans);
 
 
 ***********************
@@ -640,9 +711,10 @@ eq_trans_bidirect(trans_links(z,z_alias,trans)) ..  var_trans_pcap(z,z_alias,tra
 
 * Emissions limit - European average
 
-eq_co2_budget(yr) .. sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)*gen_emisfac(non_vre))*1E3 =L=
-
-sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*2.
+eq_co2_budget(yr)..
+    sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)
+        *gen_emisfac(non_vre))*1E3
+    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*%co2intensity%
 
 
 * Capacity Margin
@@ -650,20 +722,28 @@ sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*2.
 *scalar dem_max;
 *dem_max=smax(h,sum(z,demand(z,h)));
 
-*eq_cap_margin .. sum(non_vre,var_tot_pcap(non_vre)*gen_peakaf(non_vre))+sum(vre,var_tot_pcap(vre)*gen_peakaf(vre)) =G= dem_max*1.1 ;
+*eq_cap_margin..
+*   sum(non_vre,var_tot_pcap(non_vre)*gen_peakaf(non_vre))
+*   +sum(vre,var_tot_pcap(vre)*gen_peakaf(vre)) =G= dem_max*1.1;
 
-*eq_max_cap(z,g) .. var_cap_z(z,g)+sum(vre_lim(vre,z,r),exist_vre_cap_r(z,vre,r))+gen_exist_pcap_z(z,non_vre) =L= max_cap(z,g)
+*eq_max_cap(z,g)..
+*   var_cap_z(z,g)+sum(vre_lim(vre,z,r),exist_vre_cap_r(z,vre,r))
+*   +gen_exist_pcap_z(z,non_vre) =L= max_cap(z,g)
 
-* Equation for minimum renewable share of generation, set based on restricting non VRE generation.
+* Equation for minimum renewable share of generation, set based on restricting
+*   non VRE generation.
 
-set flexgen(non_vre) / NaturalgasOCGTnew / ;
+set flexgen(non_vre) / NaturalgasOCGTnew /;
 
 $IF "%RPS%" == "optimal" $GOTO optimal
-scalar dem_tot;
-dem_tot=sum((z,h),demand(z,h));
+    scalar dem_tot;
+    dem_tot=sum((z,h),demand(z,h));
 
-Equations eq_max_non_vre;
-eq_max_non_vre .. sum((h,z,non_vre)$(gen_lim(z,non_vre) and not flexgen(non_vre)),var_gen(h,z,non_vre)) =E= dem_tot*(1-RPS_scalar);
+    Equations eq_max_non_vre;
+    eq_max_non_vre..
+        sum((h,z,non_vre)$(gen_lim(z,non_vre) and not flexgen(non_vre)),
+            var_gen(h,z,non_vre))
+        =E= dem_tot*(1-RPS_scalar);
 $label optimal
 
 
@@ -763,7 +843,8 @@ $endIf
 
 
 parameter trans_f(h,z,z_alias,trans);
-trans_f(h,z,z_alias,trans)=var_trans_flow.l(h,z_alias,z,trans)$(var_trans_flow.l(h,z,z_alias,trans)>1.0);
+trans_f(h,z,z_alias,trans)=var_trans_flow.l(h,z_alias,z,trans)
+    $(var_trans_flow.l(h,z,z_alias,trans)>1.0);
 *display trans_f;
 
 parameter max_bidir_trans;
@@ -808,4 +889,8 @@ execute_unload "%outname%"
 
 * convert GDX to SQLite
 
-$IF "%gdx2sql%" == ON execute "gdx2sqlite -i %outname%.gdx -o %outname%.db -fast"
+
+$ifThen "%gdx2sql%" == ON
+execute "gdx2sqlite -i %outname%.gdx -o %outname%.db -fast"
+$endIf
+
