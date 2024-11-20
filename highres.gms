@@ -50,7 +50,7 @@ $offdigit
 *                   produce
 
 $setglobal datafolderpath "."
-$setglobal codefolderpath "../../../../resources/highRES-Europe-GAMS"
+$setglobal codefolderpath "."
 
 $setglobal log "test_log"
 $setglobal gdx2sql "OFF"
