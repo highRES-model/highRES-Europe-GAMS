@@ -17,17 +17,18 @@ $offdigit
 * log = text file to store details about model run time, optimality or not, etc.
 * gdx2sql (ON/OFF) = whether to convert output GDX to sqlite database -> easier
 *                       to read into Python
-* cplex_opt_file = set which cplex option file to use, if "1" then use default
-*                   cplex.opt
+* outname = output name of GDX file
+*
+* GWatts (YES/NO) = model is run in GW (YES) or MW (NO)
+*
 * storage (ON/OFF) = should storage be included in the model run
 * hydrores (ON/OFF) = should reservoir hydro be incliuded in the model run
-* UC (ON/OFF) = unit committment switch
-* f_res (ON/OFF) = should frequency response requirements be modelled
-* water (ON/OFF) = model technologies with a water footprint (currently
-*                   disabled)
 * sensitivity (ON/OFF) = whether a sensitivity file is available
-* GWatts (YES/NO) = model is run in GW (YES) or MW (NO)
-
+* UC (ON/OFF) = unit committment switch
+* store_uc (ON/OFF) = storage unit committment switch
+*
+* f_res (ON/OFF) = should frequency response requirements be modelled
+*
 * sense_run = sensitivity file identifier
 * esys_scen = energy system scenario (sets the carbon budget and demands to be
 *               used)
@@ -37,37 +38,45 @@ $offdigit
 * model_yr = which year in the future are we modelling
 * weather_yr = which weather year do we use
 * dem_yr = which demand year do we use
-
 * fx_trans (YES/NO) = fix transmission network to input values
+* fx_caps_to = file containing capacities to fix the system to
+* co2intensity = Average annual carbon dioxide emission intensity
+*                the model is allowed to produce
+* pen_gen (ON/OFF) = whether value of lost load (VoLL) is modelled
+*
+*
+* DISABLED switches
+*
 * fx_natcap (YES/NO) = fix total national capacities ->  let highRES decide
 *                          where to place them
-
-* pen_gen (ON/OFF) = whether value of lost load (VoLL) is modelled
-* fx_caps_to = file containing capacities to fix the system to
-
-* outname = output name of GDX file
-* co2intensity = Carbon dioxide emission intensity the model is allowed to
-*                   produce
+* water (ON/OFF) = model technologies with a water footprint
+*
+*
+* Paths, logging and IO
 
 $setglobal datafolderpath "."
 $setglobal codefolderpath "."
-
 $setglobal log "test_log"
 $setglobal gdx2sql "OFF"
-$setglobal cplex_opt_file "1"
+$setglobal outname "results"
+
+* Units
+
+$setglobal GWatts "YES"
+
+* Modules
 
 $setglobal storage "ON"
 $setglobal hydrores "ON"
-
-* Unit comittment switches
+$setglobal sensitivity "OFF"
 $setglobal UC "OFF"
 $setglobal store_uc "OFF"
+
+** Unit comittment switches
+
 $setglobal f_res "OFF"
 
-$setglobal water "OFF"
-$setglobal sensitivity "OFF"
-
-$setglobal GWatts "YES"
+* Case options
 
 $setglobal sense_run "None"
 $setglobal esys_scen "BASE"
@@ -78,14 +87,14 @@ $setglobal model_yr "2050"
 $setglobal weather_yr "2010"
 $setglobal dem_yr "2010"
 $setglobal fx_trans "NO"
-$setglobal fx_natcap "NO"
+$setglobal fx_caps_to ""
+$setglobal co2intensity "2"
 
 $set pen_gen "OFF"
 
-$setglobal fx_caps_to ""
-
-$setglobal outname "results"
-$setglobal co2intensity "2"
+* Disabled switches
+$setglobal water "OFF"
+$setglobal fx_natcap "NO"
 
 
 
@@ -390,7 +399,7 @@ gen_exist_r_on(z,vre)=sum((r,lt),gen_exist_pcap_r(vre,z,r,lt));
 
 var_exist_pcap_z.UP(z,g)$(not (sum(lt,gen_exist_pcap_z(z,g,lt)) > 0. or gen_exist_r_on(z,g) > 0.)) = 0.0;
 
-$IF "%fx_natcap%" == YES var_new_pcap.FX(g)$(gen_fx_natcap(g))=gen_fx_natcap(g);
+* $IF "%fx_natcap%" == YES var_new_pcap.FX(g)$(gen_fx_natcap(g))=gen_fx_natcap(g);
 
 
 
@@ -417,7 +426,7 @@ $IF "%store_uc%" == ON $INCLUDE %codefolderpath%/highres_storage_uc_setup.gms
 
 $IF "%UC%" == ON $INCLUDE %codefolderpath%/highres_uc_setup.gms
 
-$IF "%water%" == ON $INCLUDE %codefolderpath%/highres_water_setup.gms
+*$IF "%water%" == ON $INCLUDE %codefolderpath%/highres_water_setup.gms
 
 $IF "%hydrores%" == ON $INCLUDE %codefolderpath%/highres_hydro.gms
 
@@ -498,7 +507,7 @@ eq_trans_flow
 eq_trans_bidirect
 $IF "%pen_gen%" == ON eq_pen_gen
 
-eq_co2_budget
+eq_co2_target
 
 *eq_cap_margin
 
@@ -711,7 +720,7 @@ eq_trans_bidirect(trans_links(z,z_alias,trans))..
 
 * Emissions limit - European average
 
-eq_co2_budget(yr)..
+eq_co2_target(yr)..
     sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)
         *gen_emisfac(non_vre))*1E3
     =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*%co2intensity%
@@ -752,84 +761,22 @@ Model Dispatch /all/;
 
 * don't usually use crossover but can be used to ensure
 * a simplex optimal solution is found
+
 $ontext
-Option LP = CPLEX;
-Option MIP = CPLEX;
-
-$ifThen %cplex_opt_file% == 1
-
-$set cplex_fname "cplex.opt"
-
-$else
-
-$set cplex_fname "cplex.op%cplex_opt_file%"
-
-$endIf
-
-$onecho > %cplex_fname%
-
-
-cutpass=-1
-
-solvefinal=0
-epgap=0.01
 
 barorder=0
 baralg=0
 solutiontype=2
 barepcomp=1E-7
 subalg=4
-numericalemphasis=0
-
-heurfreq=1
-
 lpmethod=4
-threads=5
-startalg=4
-
-parallelmode=-1
-tilim=720000
-mipdisplay=5
-names yes
-scaind=1
-epmrk=0.9999
-clonelog=1
-mipkappastats=1
-perind=1
-
-
+threads=10
+scaind=0
 
 $offecho
 $offtext
 Dispatch.OptFile = 1;
 
-*numericalemphasis=1
-*dpriind=5
-
-$ontext
-
-writelp="C:\science\highRES\development\highres.lp"
-
-epopt=1E-4
-eprhs=1E-4
-var_n_units.prior(z,non_vre) = 1;
-var_up_units.prior(z,h,non_vre)=100;
-var_down_units.prior(z,h,non_vre)=100;
-var_com_units.prior(z,h,non_vre)=100;
-Dispatch.prioropt=1;
-$offtext
-
-
-* 12:18
-* 11 min bar order=3 and baralg=1
-
-*writelp="C:\science\highRES\work\highres.lp"
-
-* 2003 flexgen+store baralg=2, scaind=1 optimal
-* barepcomp=1E-8
-* ppriind=1
-
-*execute_loadpoint "hR_dev";
 
 $ifThen "%UC%" == ON
 
