@@ -71,7 +71,7 @@ scalar co2_budget;
 
 $INCLUDE %datafolderpath%/%psys_scen%_gen.dd
 $INCLUDE %datafolderpath%/trans.dd
-$INCLUDE %datafolderpath%/%esys_scen%_co2_budget.dd
+*$INCLUDE %datafolderpath%/%esys_scen%_co2_budget.dd
 
 * need to switch between agg and not for areas currently
 
