@@ -762,19 +762,7 @@ Model Dispatch /all/;
 * don't usually use crossover but can be used to ensure
 * a simplex optimal solution is found
 
-$ontext
 
-barorder=0
-baralg=0
-solutiontype=2
-barepcomp=1E-7
-subalg=4
-lpmethod=4
-threads=10
-scaind=0
-
-$offecho
-$offtext
 Dispatch.OptFile = 1;
 
 
