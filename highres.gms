@@ -277,7 +277,6 @@ gen_varom("Solar")=0.001;
 * Rescale parameters for runs that are greater or less than one year
 
 if (card(h) < 8760,
-*co2_budget=round(co2_budget*(card(h)/8760.),8);
 gen_capex(g)=round(gen_capex(g)*(card(h)/8760.),8);
 gen_fom(g)=round(gen_fom(g)*(card(h)/8760.),8);
 trans_line_capex(trans)=round(trans_line_capex(trans)*(card(h)/8760.),8);
