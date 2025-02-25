@@ -79,28 +79,20 @@ hlast(h) last hour
 hfirst(h) = yes$(ord(h) eq 1);
 hlast(h) = yes$(ord(h) eq card (h));
 
-* how full are the reservoirs at the start and end (decimal fraction or %/100)
-
-scalar hydro_res_initial_fill /0.8/;
-
-* minimum reservoir level
-
-scalar hydro_res_min /0.5/;
-
 * set hydro inflow
 
 var_hydro_in.FX(h,z,hydro_res)$(gen_lim(z,hydro_res))
     = hydro_inflow(h,z,hydro_res)/MWtoGW;
 
-* set minimum reservoir level to be 50%
+* set minimum reservoir level
 
 var_hydro_level.LO(h,z,hydro_res)$(gen_lim(z,hydro_res))
-    = var_exist_hydro_ecap_z.L(z,hydro_res)*hydro_res_min;
+    = var_exist_hydro_ecap_z.L(z,hydro_res)*%hydro_res_min%;
 
 * set final reservoir level equal to starting level
 
 var_hydro_level.LO(hlast,z,hydro_res)$(gen_lim(z,hydro_res))
-    = var_exist_hydro_ecap_z.L(z,hydro_res)*hydro_res_initial_fill;
+    = var_exist_hydro_ecap_z.L(z,hydro_res)*%hydro_res_initial_fill%;
 
 equations
 eq_hydro_balance
@@ -143,7 +135,7 @@ eq_hydro_balance(h,gen_lim(z,hydro_res))..
     =E= var_hydro_level(h-1,z,hydro_res) + var_hydro_in(h,z,hydro_res)
         - var_gen(h,z,hydro_res) - var_hydro_spill(h,z,hydro_res)
         + (var_exist_hydro_ecap_z(z,hydro_res)
-        * hydro_res_initial_fill)$hfirst(h);
+        * %hydro_res_initial_fill%)$hfirst(h);
 
 eq_hydro_level(h,gen_lim(z,hydro_res))..
     var_hydro_level(h,z,hydro_res) =L= var_tot_hydro_ecap_z(z,hydro_res);

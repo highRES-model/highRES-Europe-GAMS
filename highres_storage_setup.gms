@@ -227,7 +227,7 @@ eq_store_balance(h,s_lim(z,s))..
     var_store_level(h,z,s) =E= var_store_level(h-1,z,s)*(1-store_loss_per_hr(s))
     + var_store(h,z,s)*store_eff_in(s) - var_store_gen(h,z,s)
     *round(1/store_eff_out(s),3)
-    + (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*0.5)$hfirst(h);
+    + (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*%store_initial_level%)$hfirst(h);
 
 *equations eq_test;
 * eq_test(h,s_lim(z,s))$(store_uc_lin(s) and uk_z(z))..
@@ -258,7 +258,7 @@ eq_store_charge_max(s_lim(z,s),h)..
 
 equation eq_store_end_level;
 eq_store_end_level(h,z,s)$(s_lim(z,s) and hlast(h))..
-    var_store_level(h,z,s) =E= var_tot_store_ecap_z(z,s)*0.5;
+    var_store_level(h,z,s) =E= var_tot_store_ecap_z(z,s)*%store_final_level%;
 
 
 
