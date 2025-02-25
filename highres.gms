@@ -41,8 +41,15 @@ $offdigit
 * fx_trans (YES/NO) = fix transmission network to input values
 * fx_caps_to = file containing capacities to fix the system to
 * co2intensity = Average annual carbon dioxide emission intensity
-*                the model is allowed to produce
+*                the model is allowed to produce (gCO2/kWh)
+* emis_price = emission price for non VRE
+* store_initial_level = energy stored at the start (%/100)
+* store_final_level = energy stored at the end (%/100)
+* hydro_res_initial_fill = how full are the reservoirs at the start and end (%/100)
+* hydro_res_min = minimum reservoir level (%/100)
+*
 * pen_gen (ON/OFF) = whether value of lost load (VoLL) is modelled
+* pgen = pen_gen cost
 *
 *
 * DISABLED switches
@@ -89,8 +96,16 @@ $setglobal dem_yr "2010"
 $setglobal fx_trans "NO"
 $setglobal fx_caps_to ""
 $setglobal co2intensity "2"
+$setglobal emis_price "0"
+
+$setglobal store_initial_level "0.5"
+$setglobal store_final_level "0.5"
+
+$setglobal hydro_res_initial_fill "0.8"
+$setglobal hydro_res_min "0.5"
 
 $set pen_gen "OFF"
+$setglobal pgen "20.0"
 
 * Disabled switches
 $setglobal water "OFF"
@@ -137,11 +152,6 @@ RPS
 RPS=RPS/100.
 
 $label optimal1
-
-scalar
-emis_price
-/0./
-;
 
 
 demand(z,h)=demand(z,h)/MWtoGW;
@@ -248,15 +258,13 @@ area(vre,z,r)$(area(vre,z,r)<0.) = 0.;
 
 * Fuel, varom and emission costs for non VRE gens;
 
-gen_varom(non_vre)=gen_fuelcost(non_vre)+gen_emisfac(non_vre)*emis_price+
+gen_varom(non_vre)=gen_fuelcost(non_vre)+gen_emisfac(non_vre)*%emis_price%+
     gen_varom(non_vre);
 
 
 * Penalty generation setup
 * VoLL set at 20000£/MWh
 
-scalar
-pgen /20./;
 
 * Solar marginal - small value necessary to avoid transmission system issue
 
@@ -553,7 +561,7 @@ $endIf
 
 $ifThen "%pen_gen%" == ON
     eq_pen_gen(z)..
-        costs_pgen(z) =E= sum((h),var_pgen(h,z)*pgen);
+        costs_pgen(z) =E= sum((h),var_pgen(h,z)*%pgen%);
 $endIf
 
 eq_costs_store_capex(z)..
