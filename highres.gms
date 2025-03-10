@@ -132,7 +132,6 @@ $endif
 
 $INCLUDE %codefolderpath%/highres_data_input.gms
 
-
 $IF "%storage%" == ON $INCLUDE %codefolderpath%/highres_storage_setup.gms
 
 * WARNING: for parameter updates to work there can be no arithmetic in the code
@@ -204,7 +203,10 @@ ramp_and_mingen(z,non_vre)
 
 $ifThen "%UC%" == ON
 
+* UC on for all zones by default
 
+set uc_z(z);
+uc_z(z)=YES;
 
 * set for generations that can provide quick start operating reserve
 
@@ -418,10 +420,12 @@ $ifThen "%UC%" == ON
     scalars
     f_res_time      frequency response ramp up window (minutes)    / 0.083 /
     res_time        operating reserve ramp up window (minutes)     / 20. /
-    unit_cap_lim_z  limit the maximum capacity of each units deployed in each
-        zone (MW)                                                  /50000./
+* unit_cap_lim_z only applies to techs being modelled as integer units normal linear
+* UC techs will not be constrained by it
+    unit_cap_lim_z  maximum capacity of each units deployed in each zone (MW) /50000./
     res_margin      operating reserve margin (fraction of demand)  / 0.1 /
     ;
+
 
     sets
     service_type    ancillary service type                / f_response, reserve/
@@ -575,12 +579,14 @@ eq_costs_store_fom(z)..
 eq_costs_store_varom(z)..
     costs_store_varom(z) =E= sum((h,s)$s_lim(z,s),var_store_gen(h,z,s)
         *store_varom(s));
-
-$IF "%store_uc%" == ON eq_costs_store_start(z)..
-$IF "%store_uc%" == ON     costs_store_start(z) =E= sum(
-$IF "%store_uc%" == ON          (h,s_lim(z,store_uc_lin)),
-$IF "%store_uc%" == ON          var_store_up_units_lin(h,z,store_uc_lin)
-$IF "%store_uc%" == ON          *store_startupcost(store_uc_lin));
+        
+$ifthen "%store_uc%" == ON
+    eq_costs_store_start(z)..
+        costs_store_start(z) =E= sum(
+          (h,s_lim(z,store_uc_lin)),
+         var_store_up_units_lin(h,z,store_uc_lin)*
+         store_startupcost(store_uc_lin));
+$endif
 
 eq_costs_trans_capex(z)..
     costs_trans_capex(z) =E= sum(trans_links(z,z_alias,trans),
