@@ -197,25 +197,6 @@ eq_tot_store_ecap_z(z,s)..
 eq_tot_store_ecap(s)..
     sum(z,var_tot_store_ecap_z(z,s)) =E= var_tot_store_ecap(s);
 
-$ontext
-
-binary variables
-var_store_tot_n_units_z(z,s)
-*var_com_store_units(h,z,s)
-*var_up_store_units(h,z,s)
-*var_down_store_units(h,z,s)
-;
-
-positive variable
-var_store_tot_n_units(s);
-
-$offtext
-
-
-*set store_uc_lin(s) / SynCon /;
-
-*set store_uc_lin(s) /H2-Tanks-168GT/;
-
 
 set hfirst(h),hlast(h);
 hfirst(h) = yes$(ord(h) eq 1);
@@ -228,12 +209,6 @@ eq_store_balance(h,s_lim(z,s))..
     + var_store(h,z,s)*store_eff_in(s) - var_store_gen(h,z,s)
     *round(1/store_eff_out(s),3)
     + (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*%store_initial_level%)$hfirst(h);
-
-*equations eq_test;
-* eq_test(h,s_lim(z,s))$(store_uc_lin(s) and uk_z(z))..
-*   var_store_gen(h,z,s)*round(1/store_eff_out(s),3)
-*   =E= var_store(h,z,s)*store_eff_in(s);
-
 
 
 
@@ -281,8 +256,6 @@ var_store_gen(h,z,s)+var_store_res(h,z,s)
 $IF "%f_res%" == ON +var_store_f_res(h,z,s)
 
 =L= var_tot_store_pcap_z(z,s)*store_af(s);
-*var_store_gen(h,z,s)+var_store_f_res(h,z,s)=L= var_tot_store_pcap_z(z,s)
-    *store_af(s);
 
 * max2 does cover the European part of the model
 eq_store_gen_max2(s_lim(z,s),h)..

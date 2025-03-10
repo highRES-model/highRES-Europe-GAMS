@@ -10,10 +10,10 @@ $ONEPS
 
 
 
-
+* vre forecast errors (fraction of output)
+* - both from NatGrid 2017 - Demand Forecasting
 parameter
-vre_margin(vre)  vre forecast errors (fraction of output)
-                    - both from NatGrid 2017 - Demand Forecasting
+vre_margin(vre)
 /
 Windonshore 0.14
 Windoffshore 0.14
@@ -96,18 +96,12 @@ Positive variables
 var_tot_n_units_lin(z,non_vre)              total number of units (linear)
 var_new_n_units_lin(z,non_vre)              number of new units (linear)
 var_exist_n_units_lin(z,non_vre)            number of existing units (linear)
-var_up_units_lin(h,z,non_vre)               units starting up by tech zone and
-                                            hour (linear)
-var_down_units_lin(h,z,non_vre)             units shutdown by tech zone and
-                                            hour (linear)
-var_com_units_lin(h,z,non_vre)              units committed by tech zone and
-                                            hour (linear)
-var_res(h,z,non_vre)                        operating reserve offered by tech
-                                            zone and hour (MW)
-var_res_quick(h,z,non_vre)                  quick start operating reserve by
-                                            tech zone and hour (MW)
-$IF "%f_res%" == ON var_f_res(h,z,non_vre)  frequency resonse by tech zone and
-                                            hour (MW)
+var_up_units_lin(h,z,non_vre)               units starting up by tech zone hour (linear)
+var_down_units_lin(h,z,non_vre)             units shutdown by tech zone hour (linear)
+var_com_units_lin(h,z,non_vre)              units committed by tech zone hour (linear)
+var_res(h,z,non_vre)                        operating reserve offered by tech zone hour (MW)
+var_res_quick(h,z,non_vre)                  quick start operating reserve by tech zone hour (MW)
+$IF "%f_res%" == ON var_f_res(h,z,non_vre)  frequency resonse by tech zone hour (MW)
 ;
 
 Integer variables
@@ -115,10 +109,8 @@ var_tot_n_units(z,non_vre)                  total units per zone
 var_new_n_units(z,non_vre)                  newly installed units per zone
 var_exist_n_units(z,non_vre)                existing units per zone
 var_up_units(h,z,non_vre)                   units started per tech hour and zone
-var_down_units(h,z,non_vre)                 units shutdown per tech hour and
-                                            zone
-var_com_units(h,z,non_vre)                  committed units per tech hour and
-                                            zone
+var_down_units(h,z,non_vre)                 units shutdown per tech hour and zone
+var_com_units(h,z,non_vre)                  committed units per tech hour and zone
 ;
 
 
@@ -252,19 +244,6 @@ eq_uc_exist_cap_lin(z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
         var_exist_pcap_z(z,non_vre)
         =E= var_exist_n_units_lin(z,non_vre)*gen_unitsize(non_vre);
 
-
-*eq_uc_cap_lin(z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre))..
-    var_new_pcap_z(z,non_vre)
-    =E= var_n_units_lin(z,non_vre)*gen_unitsize(non_vre);
-
-*eq_uc_exist_cap(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre))..
-    var_exist_cap_z(z,non_vre)
-    =E= var_exist_n_units(z,non_vre)*gen_unitsize(non_vre);
-
-*eq_uc_new_cap(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre))..
-    var_new_pcap_z(z,non_vre)
-    =E= var_new_n_units(z,non_vre)*gen_unitsize(non_vre);
-
 ** Integer operability
 
 * total committed units must be less than installed units
@@ -287,7 +266,7 @@ eq_uc_gen_max(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
     uc_z(z))..
         var_com_units(h,z,non_vre)*gen_unitsize(non_vre)*gen_af(non_vre)
         =G= var_gen(h,z,non_vre) + var_res(h,z,non_vre)
-        $IF "%f_res%" == ON +var_f_res(h,z,non_vre)
+$IF "%f_res%" == ON +var_f_res(h,z,non_vre)
         ;
 
 * minimum stable generation
@@ -328,7 +307,7 @@ eq_uc_gen_max_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
     and uc_z(z))..
         var_com_units_lin(h,z,non_vre)*gen_unitsize(non_vre)*gen_af(non_vre)
         =G= var_gen(h,z,non_vre) + var_res(h,z,non_vre)
-        $IF "%f_res%" == ON +var_f_res(h,z,non_vre)
+$IF "%f_res%" == ON +var_f_res(h,z,non_vre)
         ;
 
 eq_uc_gen_min_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
@@ -420,10 +399,11 @@ eq_uc_H(h)..
                         and uc_z(z)),gen_inertia(non_vre)
                         *var_com_units_lin(h,z,non_vre)
                         *(gen_unitsize(non_vre)*MWtoGW/1E3)/f_0)
-$IF "%store_uc%" == ON  +sum((z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s)),
-$IF "%store_uc%" == ON  store_inertia(s)*var_store_com_units_lin(h,z,s)
-$IF "%store_uc%" == ON  *(store_unitsize(s)*MWtoGW/1E3)/f_0)
-;
+$ifthen "%store_uc%" == ON
+    +sum((z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s)),
+    store_inertia(s)*var_store_com_units_lin(h,z,s)*(store_unitsize(s)*MWtoGW/1E3)/f_0);
+$endif    
+
 * -((p_loss/1E3)*p_loss_inertia/f_0);
 
 var_H.LO(h) = 0.825;
@@ -499,7 +479,7 @@ $IF "%f_res%" == ON eq_uc_store_f_res_max
 eq_uc_store_res_level(h,s_lim(z,s))$((store_max_res(s) > 0. or
     store_max_freq(s) > 0.) and uc_z(z))..
         var_store_res(h,z,s)
-        $IF "%f_res%" == ON +var_store_f_res(h,z,s)
+$IF "%f_res%" == ON +var_store_f_res(h,z,s)
         =L= var_store_level(h,z,s);
 
 * limits reserve offered by storage based on how much of its capacity can come
@@ -517,11 +497,15 @@ eq_uc_store_res_max(h,s_lim(z,s))$(uc_z(z) and not store_uc_lin(s))..
 
 * store_max_freq(s) > 0. and
 
-$IF "%f_res%" == ON eq_uc_store_f_res_max(h,s_lim(z,s))$(uc_z(z) and not
-$IF "%f_res%" == ON     store_uc_lin(s))..
-$IF "%f_res%" == ON         var_store_f_res(h,z,s) 
-$IF "%f_res%" == ON         =L= var_tot_store_pcap_z(z,s)*store_af(s)
-$IF "%f_res%" == ON             *store_max_freq(s);
+$ifThen "%f_res%" == ON
+
+eq_uc_store_f_res_max(h,s_lim(z,s))$(uc_z(z) and not
+store_uc_lin(s))..
+var_store_f_res(h,z,s) 
+=L= var_tot_store_pcap_z(z,s)*store_af(s)*store_max_freq(s);
+
+$endif
+
 $endIf
 
 
@@ -530,50 +514,53 @@ $endIf
 eq_uc_reserve(h) ..
 *   spinning - only techs which can offer reserve
     sum((z,non_vre)$(gen_lim(z,non_vre) and gen_max_res(non_vre,"reserve") > 0.
-        and uc_z(z)),var_res(h,z,non_vre))
+    and uc_z(z)),var_res(h,z,non_vre))
 
 *   quick start
     +sum((z,non_vre)$(gen_lim(z,non_vre) and gen_quick(non_vre) and uc_z(z)),
         var_res_quick(h,z,non_vre))
-    $IF "%store_uc%" == ON +sum((z,s)$(s_lim(z,s) and store_uc_lin(s) and
-    $IF "%store_uc%" == ON      uc_z(z) and store_quick(s)),
-    $IF "%store_uc%" == ON      var_store_res_quick(h,z,s))
+        
+$ifthen "%store_uc%" == ON       
+    +sum((z,s)$(s_lim(z,s) and store_uc_lin(s) and
+      uc_z(z) and store_quick(s)),
+      var_store_res_quick(h,z,s))
+$endif
 
 
 *   storage
-    $IF "%storage%" == ON +sum(s_lim(z,s)$(store_max_res(s) > 0. and uc_z(z) 
-    $IF "%storage%" == ON       and not store_uc_lin(s)),var_store_res(h,z,s))
-    $IF "%storage%" == ON +sum(s_lim(z,s)$(uc_z(z) and store_uc_lin(s)),
-    $IF "%storage%" == ON       var_store_res(h,z,s))
-*
+
+$ifthen "%storage%" == ON
+    +sum(s_lim(z,s)$(store_max_res(s) > 0. and uc_z(z) 
+      and not store_uc_lin(s)),var_store_res(h,z,s))
+    +sum(s_lim(z,s)$(uc_z(z) and store_uc_lin(s)),
+      var_store_res(h,z,s))
+$endif      
 
     -sum((z,vre)$(uc_z(z)),var_gen(h,z,vre)*vre_margin(vre))
 
     =G= res_req(h);
 
 
+
+
 $ifThen "%f_res%" == ON
 
-*   Main response equation
-    eq_uc_response(h)..
+* Main response equation
+eq_uc_response(h)..
 
-*       spinning
+*   spinning
         sum((z,non_vre)$(gen_lim(z,non_vre) and
             gen_max_res(non_vre,"f_response") > 0. and uc_z(z)),
             var_f_res(h,z,non_vre))
 
-*       quick start - no quick start for response
-*       +sum((z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)),
-*           var_res_quick(h,z,non_vre))
-
-*       storage
-        $IF "%storage%" == ON +sum(s_lim(z,s)$(store_max_freq(s) > 0. and
-        $IF "%storage%" == ON     uc_z(z) and not store_uc_lin(s)),
-        $IF "%storage%" == ON     var_store_f_res(h,z,s))
-        $IF "%storage%" == ON +sum(s_lim(z,s)$(uc_z(z) and store_uc_lin(s)),
-        $IF "%storage%" == ON     var_store_f_res(h,z,s))
-
-*
+*   storage
+$ifthen "%storage%" == ON
+    +sum(s_lim(z,s)$(store_max_freq(s) > 0. and
+    uc_z(z) and not store_uc_lin(s)),
+    var_store_f_res(h,z,s))
+    +sum(s_lim(z,s)$(uc_z(z) and store_uc_lin(s)),
+    var_store_f_res(h,z,s))
+$endif
 
         =G= var_freq_req(h);
 

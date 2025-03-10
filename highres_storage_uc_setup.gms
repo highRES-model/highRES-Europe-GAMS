@@ -13,8 +13,8 @@ set map_minup_store(h,s,h)
 
 set store_quick(s);
 
-store_quick("H2-Salt-CCGT")=no;
-store_quick("H2-Salt-OCGT")=yes;
+store_quick("H2-Tanks-CCGT")=no;
+*store_quick("H2-Salt-OCGT")=yes;
 
 parameter store_max_res_uc(s,service_type);
 
@@ -37,11 +37,9 @@ Positive variables
 var_store_tot_n_units_lin(z,s)     total number of units (linear)
 var_store_new_n_units_lin(z,s)     number of new units (linear)
 var_store_exist_n_units_lin(z,s)   number of existing units (linear)
-var_store_up_units_lin(h,z,s)      units starting up by tech zone and hour
-*                                  (linear)
+var_store_up_units_lin(h,z,s)      units starting up by tech zone and hour (linear)
 var_store_down_units_lin(h,z,s)    units shutdown by tech zone and hour (linear)
-var_store_com_units_lin(h,z,s)     units committed by tech zone and hour
-                                   (linear)
+var_store_com_units_lin(h,z,s)     units committed by tech zone and hour (linear)
 ;
 
 Equations
