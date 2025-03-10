@@ -370,7 +370,7 @@ eq_uc_max_response_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
 $endIf
 
 
-$ifThen "%f_res%" == ON
+$ifThen.a "%f_res%" == ON
 
 equations
 eq_uc_H
@@ -399,10 +399,10 @@ eq_uc_H(h)..
                         and uc_z(z)),gen_inertia(non_vre)
                         *var_com_units_lin(h,z,non_vre)
                         *(gen_unitsize(non_vre)*MWtoGW/1E3)/f_0)
-$ifthen "%store_uc%" == ON
+$ifthen.b "%store_uc%" == ON
     +sum((z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s)),
     store_inertia(s)*var_store_com_units_lin(h,z,s)*(store_unitsize(s)*MWtoGW/1E3)/f_0);
-$endif    
+$endif.b    
 
 * -((p_loss/1E3)*p_loss_inertia/f_0);
 
@@ -462,9 +462,9 @@ eq_uc_freq_req(h,seg)..
         +linearise(seg,"intercept"))*1E3/MWtoGW;
 
 
-$endIf
+$endIf.a
 
-$ifThen "%storage%" == ON
+$ifThen.a "%storage%" == ON
 
 
 Equations
@@ -497,16 +497,16 @@ eq_uc_store_res_max(h,s_lim(z,s))$(uc_z(z) and not store_uc_lin(s))..
 
 * store_max_freq(s) > 0. and
 
-$ifThen "%f_res%" == ON
+$ifThen.b "%f_res%" == ON
 
 eq_uc_store_f_res_max(h,s_lim(z,s))$(uc_z(z) and not
 store_uc_lin(s))..
 var_store_f_res(h,z,s) 
 =L= var_tot_store_pcap_z(z,s)*store_af(s)*store_max_freq(s);
 
-$endif
+$endif.b
 
-$endIf
+$endIf.a
 
 
 * Main reserve equation
@@ -543,7 +543,7 @@ $endif
 
 
 
-$ifThen "%f_res%" == ON
+$ifThen.a "%f_res%" == ON
 
 * Main response equation
 eq_uc_response(h)..
@@ -554,14 +554,14 @@ eq_uc_response(h)..
             var_f_res(h,z,non_vre))
 
 *   storage
-$ifthen "%storage%" == ON
+$ifthen.b "%storage%" == ON
     +sum(s_lim(z,s)$(store_max_freq(s) > 0. and
     uc_z(z) and not store_uc_lin(s)),
     var_store_f_res(h,z,s))
     +sum(s_lim(z,s)$(uc_z(z) and store_uc_lin(s)),
     var_store_f_res(h,z,s))
-$endif
+$endif.b
 
         =G= var_freq_req(h);
 
-$endIf
+$endIf.a
