@@ -333,6 +333,7 @@ var_vre_curtail(h,z,vre,r)         VRE power curtailed
 *var_non_vre_curtail(z,h,non_vre)
 var_trans_flow(h,z,z_alias,trans)  Flow of electricity from node to node by hour
 *                                  (MW)
+var_tot_trans_pcap(z,z_alias,trans) Total transmission capacity node to node
 var_new_trans_pcap(z,z_alias,trans)    Capacity of node to node transmission links
 *                                  (MW)
 var_exist_trans_pcap(z,z_alias,trans)  Existing capacity of node to node
@@ -535,6 +536,7 @@ eq_gen_vre_r
 
 eq_area_max
 
+eq_trans_tot_pcap
 eq_trans_flow
 eq_trans_bidirect_new
 eq_trans_bidirect_exist
@@ -748,6 +750,16 @@ eq_ramp_down(h,ramp_on(z,non_vre))$(gen_lin(z,non_vre))..
 ******************************
 *** Transmission equations ***
 ******************************
+
+* Transmission total power capacity
+
+eq_trans_tot_pcap(trans_links(z,z_alias,trans)) ..
+
+    var_tot_trans_pcap(z,z_alias,trans) =E=
+
+    var_new_trans_pcap(z,z_alias,trans)
+    + var_exist_trans_pcap(z,z_alias,trans);
+
 
 * Transmitted electricity each hour must not exceed transmission capacity
 
