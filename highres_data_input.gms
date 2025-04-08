@@ -55,6 +55,7 @@ parameter gen_mindown(non_vre);
 parameter gen_inertia(non_vre);
 
 parameter trans_links_cap(z,z_alias,trans);
+parameter trans_links_lim_cap(z,z_alias,trans);
 parameter trans_links_dist(z,z_alias,trans);
 parameter trans_loss(trans);
 parameter trans_varom(trans);
