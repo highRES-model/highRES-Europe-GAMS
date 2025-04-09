@@ -89,6 +89,8 @@ $setglobal f_res "OFF"
 
 * Case options
 
+$setglobal co2_target_type "intensity"
+$setglobal co2_target_extent "all"
 $setglobal sense_run "None"
 $setglobal esys_scen "BASE"
 $setglobal psys_scen "BASE"
@@ -100,7 +102,7 @@ $setglobal dem_yr "2010"
 $setglobal trans_inv "TYNDP"
 $setglobal trans_cap_lim "20"
 $setglobal fx_caps_to ""
-$setglobal co2intensity "2"
+*$setglobal co2intensity "2"
 $setglobal emis_price "0"
 
 $setglobal store_initial_level "0.5"
@@ -283,7 +285,7 @@ gen_varom("Solar")=0.001;
 * Rescale parameters for runs that are greater or less than one year
 
 if (card(h) < 8760,
-*co2_budget=round(co2_budget*(card(h)/8760.),8);
+$IF "%co2_target_type%" == "budget" co2_target=round(co2_target*(card(h)/8760.),8);
 gen_capex(g)=round(gen_capex(g)*(card(h)/8760.),8);
 gen_fom(g)=round(gen_fom(g)*(card(h)/8760.),8);
 trans_line_capex(trans)=round(trans_line_capex(trans)*(card(h)/8760.),8);
@@ -790,7 +792,16 @@ eq_trans_bidirect_exist(trans_links(z,z_alias,trans))..
 eq_co2_target(yr)..
     sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)
         *gen_emisfac(non_vre))*1E3
-    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*%co2intensity%
+
+$ifThen "%co2_target_type%" == "intensity"
+
+    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*co2_target;
+    
+$elseif "%co2_target_type%" == "budget"
+
+    =L= co2_target*1E3;
+    
+$endif
 
 
 * Capacity Margin
