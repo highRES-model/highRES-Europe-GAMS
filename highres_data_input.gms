@@ -67,8 +67,15 @@ parameter vre_gen(h,vre,r);
 
 parameter demand(z,h);
 
+$ifThen "%co2_target_extent%" == "all"
+
 scalar co2_target;
 
+$elseif "%co2_target_extent%" == "zonal"
+
+parameter co2_target(z);
+
+$endif
 
 $INCLUDE %datafolderpath%/%psys_scen%_gen.dd
 $INCLUDE %datafolderpath%/trans.dd

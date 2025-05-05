@@ -285,7 +285,10 @@ gen_varom("Solar")=0.001;
 * Rescale parameters for runs that are greater or less than one year
 
 if (card(h) < 8760,
-$IF "%co2_target_type%" == "budget" co2_target=round(co2_target*(card(h)/8760.),8);
+$ifthen "%co2_target_type%" == "budget"
+$IF "%co2_target_extent%" == "all" co2_target=round(co2_target*(card(h)/8760.),8);
+$IF "%co2_target_extent%" == "zonal" co2_target(z)=round(co2_target(z)*(card(h)/8760.),8);
+$endif
 gen_capex(g)=round(gen_capex(g)*(card(h)/8760.),8);
 gen_fom(g)=round(gen_fom(g)*(card(h)/8760.),8);
 trans_line_capex(trans)=round(trans_line_capex(trans)*(card(h)/8760.),8);
@@ -789,20 +792,38 @@ eq_trans_bidirect_exist(trans_links(z,z_alias,trans))..
 
 * Emissions limit - European average
 
+$ifThen.a "%co2_target_extent%" == "all"
+
 eq_co2_target(yr)..
     sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)
-        *gen_emisfac(non_vre))*1E3
+        *gen_emisfac(non_vre))
+        
+$ifThen.b "%co2_target_type%" == "intensity"
 
-$ifThen "%co2_target_type%" == "intensity"
-
-    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*co2_target;
+    =L= sum((z,h)$(hr2yr_map(yr,h)),demand(z,h))*co2_target/1E3;
     
-$elseif "%co2_target_type%" == "budget"
+$elseif.b "%co2_target_type%" == "budget"
 
-    =L= co2_target*1E3;
+    =L= co2_target;
     
-$endif
+$endif.b
 
+$elseif.a "%co2_target_extent%" == "zonal"
+
+eq_co2_target(yr,z)..
+    sum((gen_lim(z,non_vre),h)$(hr2yr_map(yr,h)),var_gen(h,z,non_vre)
+        *gen_emisfac(non_vre))
+        
+$ifThen.b "%co2_target_type%" == "intensity"
+
+    =L= sum(h$(hr2yr_map(yr,h)),demand(z,h))*co2_target(z)/1E3;
+    
+$elseif.b "%co2_target_type%" == "budget"
+
+    =L= co2_target(z);
+
+$endif.b
+$endif.a
 
 * Capacity Margin
 
