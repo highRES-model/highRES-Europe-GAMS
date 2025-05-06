@@ -825,6 +825,20 @@ $elseif.b "%co2_target_type%" == "budget"
 $endif.b
 $endif.a
 
+* BECCS constraint
+
+$ifThenE not (sameas('%psys_scen%','BECCSnolim'))
+
+equations
+eq_max_pgen_beccs
+;
+
+set beccs(non_vre) / BiomassCCS /;
+
+eq_max_pgen_beccs .. sum((gen_lim(z,non_vre),h)$(beccs(non_vre)),var_gen(h,z,non_vre)) =L= 95.0E3*card(h)/8760.;
+
+$endif
+
 * Capacity Margin
 
 *scalar dem_max;
