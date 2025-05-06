@@ -54,7 +54,7 @@ eq_uc_store_gen_minup_lin
 eq_uc_store_gen_mindown_lin
 
 eq_uc_store_max_reserve_lin
-eq_uc_store_max_response_lin
+$IF "%f_res%" == ON eq_uc_store_max_response_lin
 ;
 
 
@@ -80,7 +80,10 @@ eq_uc_store_unit_state_lin(h,z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s))..
 
 eq_uc_store_gen_max_lin(h,z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s))..
     var_store_com_units_lin(h,z,s)*store_unitsize(s)*store_af(s)
-    =G= var_store_gen(h,z,s)+ var_store_res(h,z,s) + var_store_f_res(h,z,s);
+    =G= var_store_gen(h,z,s)+ var_store_res(h,z,s)
+$IF "%f_res%" == ON + var_store_f_res(h,z,s)
+    ;
+    
 
 eq_uc_store_gen_min_lin(h,z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s))..
     var_store_gen(h,z,s)
@@ -107,6 +110,8 @@ eq_uc_store_max_reserve_lin(h,z,s)$(s_lim(z,s) and store_uc_lin(s)
         var_store_res(h,z,s)
         =L= var_store_com_units_lin(h,z,s)*store_unitsize(s)*store_af(s)
             *store_max_res_uc(s,"reserve");
+            
+$ifThen "%f_res%" == ON
 
 eq_uc_store_max_response_lin(h,z,s)$(s_lim(z,s) and store_uc_lin(s)
     and uc_z(z))..
@@ -114,7 +119,7 @@ eq_uc_store_max_response_lin(h,z,s)$(s_lim(z,s) and store_uc_lin(s)
         =L= var_store_com_units_lin(h,z,s)*store_max_res_uc(s,"f_response")
             *store_af(s);
 
-
+$endIf
 
 equation eq_uc_store_reserve_quickstart;
 variables var_store_res_quick(h,z,s);

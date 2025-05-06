@@ -1,6 +1,6 @@
 *execute_unload "%outname%"
 
-$ifThen "%UC%" == ON
+$ifThen.a "%UC%" == ON
 
 parameter o_gen_f_provision(h,non_vre);
 parameter o_store_f_provision(h,s);
@@ -8,11 +8,15 @@ parameter o_gen_res_provision(h,non_vre);
 parameter o_store_res_provision(h,s);
 parameter o_gen_quick_res_provision(h,non_vre);
 
+$ifThen.b "%f_res%" == ON
+
 o_gen_f_provision(h,non_vre)= sum(z$(gen_lim(z,non_vre) and
     gen_max_res(non_vre,"f_response") > 0. and
     uc_z(z)),var_f_res.l(h,z,non_vre));
 o_store_f_provision(h,s)=sum(s_lim(z,s)$(store_max_freq(s) > 0. and uc_z(z)),
     var_store_f_res.l(h,z,s));
+$endif.b    
+
 o_gen_res_provision(h,non_vre)=sum(z$(gen_lim(z,non_vre) and
     gen_max_res(non_vre,"reserve") > 0. and uc_z(z)),var_res.l(h,z,non_vre));
 o_gen_quick_res_provision(h,non_vre)=sum(z$(gen_lim(z,non_vre) and
@@ -20,7 +24,9 @@ o_gen_quick_res_provision(h,non_vre)=sum(z$(gen_lim(z,non_vre) and
 o_store_res_provision(h,s)=sum(s_lim(z,s)$(store_max_res(s) > 0. and uc_z(z)),
     var_store_res.l(h,z,s));
 
-$endIf
+$endIf.a
+
+
 
 ***************
 *Costs
