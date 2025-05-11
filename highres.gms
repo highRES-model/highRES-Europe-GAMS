@@ -80,8 +80,8 @@ $setglobal GWatts "YES"
 $setglobal storage "ON"
 $setglobal hydrores "ON"
 $setglobal sensitivity "OFF"
-$setglobal UC "OFF"
-$setglobal store_uc "OFF"
+$setglobal UC "ON"
+$setglobal store_uc "ON"
 
 ** Unit comittment switches
 
@@ -215,14 +215,6 @@ $ifThen "%UC%" == ON
 
 set uc_z(z);
 uc_z(z)=YES;
-
-* set for generations that can provide quick start operating reserve
-
-set gen_quick(non_vre);
-
-* only OCGT can provide quick start reserves
-
-gen_quick("NaturalgasOCGTnew")=YES;
 
 * generators that are represented as continous linear capacity chunks
 

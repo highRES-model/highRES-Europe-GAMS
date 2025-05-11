@@ -11,11 +11,6 @@ store_startupcost(s)=store_startupcost(s)/MWtoGW;
 set map_minup_store(h,s,h)
     map_mindown_store(h,s,h);
 
-set store_quick(s);
-
-store_quick("H2-Tanks-CCGT")=no;
-*store_quick("H2-Salt-OCGT")=yes;
-
 parameter store_max_res_uc(s,service_type);
 
 
