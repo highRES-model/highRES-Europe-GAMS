@@ -164,8 +164,8 @@ demand(z,h)=demand(z,h)/MWtoGW;
 gen_cap2area(vre)=gen_cap2area(vre)/MWtoGW;
 trans_links_cap(z,z_alias,trans)=trans_links_cap(z,z_alias,trans)/MWtoGW;
 trans_links_lim_cap(z,z_alias,trans)=trans_links_lim_cap(z,z_alias,trans)/MWtoGW;
-gen_unitsize(non_vre)=gen_unitsize(non_vre)/MWtoGW;
-gen_maxramp(non_vre)=gen_maxramp(non_vre)/MWtoGW;
+gen_unitsize(g)=gen_unitsize(g)/MWtoGW;
+gen_maxramp(g)=gen_maxramp(g)/MWtoGW;
 
 
 

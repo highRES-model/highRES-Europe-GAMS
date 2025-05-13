@@ -25,20 +25,19 @@ Solar 0.12
 
 
 
-set map_minup(h,non_vre,h)
-    map_mindown(h,non_vre,h);
-
+set map_minup(h,g,h)
+    map_mindown(h,g,h);
 
 *map1_minup(h,non_vre,h_alias) = ord(h_alias) ge (ord(h) - gen_minup(non_vre)+1)
 *and ord(h_alias) lt ord(h);
-map_minup(h,non_vre,h_alias+(ord(h)-gen_minup(non_vre)))$[hh_minup(h_alias) and
-    ord (h_alias)<gen_minup(non_vre)] = yes;
+map_minup(h,g,h_alias+(ord(h)-gen_minup(g)))$[hh_minup(h_alias) and
+    ord (h_alias)<gen_minup(g)] = yes;
 
 *map1_mindown(h,non_vre,h_alias) = ord(h_alias) ge (ord(h)
 *    - gen_mindown(non_vre)+1) and ord(h_alias) lt ord(h);
-map_mindown(h,non_vre,h_alias+(ord(h)-gen_mindown(non_vre)))
-    $[hh_mindown(h_alias) and ord (h_alias)<gen_mindown(non_vre)] = yes;
-
+map_mindown(h,g,h_alias+(ord(h)-gen_mindown(g)))
+    $[hh_mindown(h_alias) and ord (h_alias)<gen_mindown(g)] = yes;
+    
 $ontext
 
 set diff1(h,non_vre,h)
@@ -55,14 +54,14 @@ display diff1,diff2;
 
 $offtext
 
-parameter gen_max_res(non_vre,service_type);
+parameter gen_max_res(g,service_type);
 
 * compute maximum power ramp in MW for each tech for in each reserve window
 
-gen_max_res(non_vre,"reserve")$(gen_uc_int(non_vre) or gen_uc_lin(non_vre)) = 
-    gen_maxramp(non_vre)*res_time;
-gen_max_res(non_vre,"f_response")$(gen_uc_int(non_vre) or gen_uc_lin(non_vre)) =
-    gen_maxramp(non_vre)*f_res_time;
+gen_max_res(g,"reserve")$(gen_uc_int(g) or gen_uc_lin(g)) = 
+    gen_maxramp(g)*res_time;
+gen_max_res(g,"f_response")$(gen_uc_int(g) or gen_uc_lin(g)) =
+    gen_maxramp(g)*f_res_time;
 
 $ontext
 max_res("Nuclear","f_response")=1.7;
@@ -80,7 +79,7 @@ $offtext
 * startupcost was in £k, now in £m as objective function is now in £m
 
 
-gen_startupcost(non_vre)=gen_startupcost(non_vre)/MWtoGW;
+gen_startupcost(g)=gen_startupcost(g)/MWtoGW;
 unit_cap_lim_z=unit_cap_lim_z/MWtoGW;
 
 parameter res_req(h)                     operating reserve requirement based on
@@ -93,24 +92,24 @@ res_req(h)=sum(z$(uc_z(z)),demand(z,h))*res_margin;
 *************************
 
 Positive variables
-var_tot_n_units_lin(z,non_vre)              total number of units (linear)
-var_new_n_units_lin(z,non_vre)              number of new units (linear)
-var_exist_n_units_lin(z,non_vre)            number of existing units (linear)
-var_up_units_lin(h,z,non_vre)               units starting up by tech zone hour (linear)
-var_down_units_lin(h,z,non_vre)             units shutdown by tech zone hour (linear)
-var_com_units_lin(h,z,non_vre)              units committed by tech zone hour (linear)
-var_res(h,z,non_vre)                        operating reserve offered by tech zone hour (MW)
-var_res_quick(h,z,non_vre)                  quick start operating reserve by tech zone hour (MW)
-$IF "%f_res%" == ON var_f_res(h,z,non_vre)  frequency resonse by tech zone hour (MW)
+var_tot_n_units_lin(z,g)              total number of units (linear)
+var_new_n_units_lin(z,g)              number of new units (linear)
+var_exist_n_units_lin(z,g)            number of existing units (linear)
+var_up_units_lin(h,z,g)               units starting up by tech zone hour (linear)
+var_down_units_lin(h,z,g)             units shutdown by tech zone hour (linear)
+var_com_units_lin(h,z,g)              units committed by tech zone hour (linear)
+var_res(h,z,g)                        operating reserve offered by tech zone hour (MW)
+var_res_quick(h,z,g)                  quick start operating reserve by tech zone hour (MW)
+$IF "%f_res%" == ON var_f_res(h,z,g)  frequency resonse by tech zone hour (MW)
 ;
 
 Integer variables
-var_tot_n_units(z,non_vre)                  total units per zone
-var_new_n_units(z,non_vre)                  newly installed units per zone
-var_exist_n_units(z,non_vre)                existing units per zone
-var_up_units(h,z,non_vre)                   units started per tech hour and zone
-var_down_units(h,z,non_vre)                 units shutdown per tech hour and zone
-var_com_units(h,z,non_vre)                  committed units per tech hour and zone
+var_tot_n_units(z,g)                  total units per zone
+var_new_n_units(z,g)                  newly installed units per zone
+var_exist_n_units(z,g)                existing units per zone
+var_up_units(h,z,g)                   units started per tech hour and zone
+var_down_units(h,z,g)                 units shutdown per tech hour and zone
+var_com_units(h,z,g)                  committed units per tech hour and zone
 ;
 
 
@@ -122,44 +121,44 @@ var_com_units(h,z,non_vre)                  committed units per tech hour and zo
 * a) existing cap, floored to ensure it doesn't breach existing cap limit
 * b) if no existing cap, set equal to 0
 
-var_exist_n_units.UP(z,non_vre)$(gen_uc_int(non_vre) and
-    gen_exist_pcap_z(z,non_vre,"UP") and uc_z(z))
-    =floor(gen_exist_pcap_z(z,non_vre,"UP")/gen_unitsize(non_vre));
-var_exist_n_units.L(z,non_vre)$(gen_uc_int(non_vre) and 
-    gen_exist_pcap_z(z,non_vre,"UP") and uc_z(z))
-    =floor(gen_exist_pcap_z(z,non_vre,"UP")/gen_unitsize(non_vre));
+var_exist_n_units.UP(z,g)$(gen_uc_int(g) and
+    gen_exist_pcap_z(z,g,"UP") and uc_z(z))
+    =floor(gen_exist_pcap_z(z,g,"UP")/gen_unitsize(g));
+var_exist_n_units.L(z,g)$(gen_uc_int(g) and 
+    gen_exist_pcap_z(z,g,"UP") and uc_z(z))
+    =floor(gen_exist_pcap_z(z,g,"UP")/gen_unitsize(g));
 
-var_exist_n_units.LO(z,non_vre)$(gen_uc_int(non_vre) and
-    gen_exist_pcap_z(z,non_vre,"LO") and uc_z(z))
-    = floor(gen_exist_pcap_z(z,non_vre,"LO")/gen_unitsize(non_vre));
-var_exist_n_units.FX(z,non_vre)$(gen_uc_int(non_vre) and
-    gen_exist_pcap_z(z,non_vre,"FX") and uc_z(z))
-    = floor(gen_exist_pcap_z(z,non_vre,"FX")/gen_unitsize(non_vre));
+var_exist_n_units.LO(z,g)$(gen_uc_int(g) and
+    gen_exist_pcap_z(z,g,"LO") and uc_z(z))
+    = floor(gen_exist_pcap_z(z,g,"LO")/gen_unitsize(g));
+var_exist_n_units.FX(z,g)$(gen_uc_int(g) and
+    gen_exist_pcap_z(z,g,"FX") and uc_z(z))
+    = floor(gen_exist_pcap_z(z,g,"FX")/gen_unitsize(g));
 
-var_exist_n_units.UP(z,non_vre)$(gen_uc_int(non_vre) and not
-    sum(lt,gen_exist_pcap_z(z,non_vre,lt)) and uc_z(z))=0.;
+var_exist_n_units.UP(z,g)$(gen_uc_int(g) and not
+    sum(lt,gen_exist_pcap_z(z,g,lt)) and uc_z(z))=0.;
 
 * set integer upper limit for new capacity being represented as units, based on:
 * a) total cap limit per zone
 * b) some arbitrary number (unit_cap_lim_z)
 
-var_tot_n_units.UP(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    gen_lim_pcap_z(z,non_vre,'UP') < INF and uc_z(z) )
-    =ceil(gen_lim_pcap_z(z,non_vre,'UP')/gen_unitsize(non_vre));
-var_tot_n_units.UP(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    gen_lim_pcap_z(z,non_vre,'UP')
-    = INF and uc_z(z))=ceil(unit_cap_lim_z/gen_unitsize(non_vre));
+var_tot_n_units.UP(z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    gen_lim_pcap_z(z,g,'UP') < INF and uc_z(z) )
+    =ceil(gen_lim_pcap_z(z,g,'UP')/gen_unitsize(g));
+var_tot_n_units.UP(z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    gen_lim_pcap_z(z,g,'UP')
+    = INF and uc_z(z))=ceil(unit_cap_lim_z/gen_unitsize(g));
 
-*var_n_units.UP(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre))
-*=ceil(50000/gen_unitsize(non_vre));
-var_up_units.UP(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    uc_z(z))=var_tot_n_units.UP(z,non_vre);
-var_down_units.UP(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    uc_z(z))=var_tot_n_units.UP(z,non_vre);
-var_com_units.UP(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    uc_z(z))=var_tot_n_units.UP(z,non_vre);
+*var_n_units.UP(z,g)$(gen_uc_int(g) and gen_lim(z,g))
+*=ceil(50000/gen_unitsize(g));
+var_up_units.UP(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    uc_z(z))=var_tot_n_units.UP(z,g);
+var_down_units.UP(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    uc_z(z))=var_tot_n_units.UP(z,g);
+var_com_units.UP(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    uc_z(z))=var_tot_n_units.UP(z,g);
 
-var_com_units.UP(h,z,non_vre)$(gen_uc_int(non_vre) and not gen_lim(z,non_vre)
+var_com_units.UP(h,z,g)$(gen_uc_int(g) and not gen_lim(z,g)
     and uc_z(z))=0.;
 
 Equations
@@ -214,117 +213,117 @@ eq_uc_max_reserve_lin
 
 ** Capacity balance equations
 
-eq_uc_tot_units(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_tot_units(z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_tot_n_units(z,non_vre)
-        =E= var_exist_n_units(z,non_vre)+var_new_n_units(z,non_vre);
+        var_tot_n_units(z,g)
+        =E= var_exist_n_units(z,g)+var_new_n_units(z,g);
 
-eq_uc_cap(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and uc_z(z))..
-    var_new_pcap_z(z,non_vre)
-    =E= var_new_n_units(z,non_vre)*gen_unitsize(non_vre);
+eq_uc_cap(z,g)$(gen_uc_int(g) and gen_lim(z,g) and uc_z(z))..
+    var_new_pcap_z(z,g)
+    =E= var_new_n_units(z,g)*gen_unitsize(g);
 
-eq_uc_exist_cap(z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_exist_cap(z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_exist_pcap_z(z,non_vre)
-        =E= var_exist_n_units(z,non_vre)*gen_unitsize(non_vre);
+        var_exist_pcap_z(z,g)
+        =E= var_exist_n_units(z,g)*gen_unitsize(g);
 
 
-eq_uc_tot_units_lin(z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
+eq_uc_tot_units_lin(z,g)$(gen_uc_lin(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_tot_n_units_lin(z,non_vre)
-        =E= var_exist_n_units_lin(z,non_vre)+var_new_n_units_lin(z,non_vre);
+        var_tot_n_units_lin(z,g)
+        =E= var_exist_n_units_lin(z,g)+var_new_n_units_lin(z,g);
 
-eq_uc_cap_lin(z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
+eq_uc_cap_lin(z,g)$(gen_uc_lin(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_new_pcap_z(z,non_vre)
-        =E= var_new_n_units_lin(z,non_vre)*gen_unitsize(non_vre);
+        var_new_pcap_z(z,g)
+        =E= var_new_n_units_lin(z,g)*gen_unitsize(g);
 
-eq_uc_exist_cap_lin(z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
+eq_uc_exist_cap_lin(z,g)$(gen_uc_lin(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_exist_pcap_z(z,non_vre)
-        =E= var_exist_n_units_lin(z,non_vre)*gen_unitsize(non_vre);
+        var_exist_pcap_z(z,g)
+        =E= var_exist_n_units_lin(z,g)*gen_unitsize(g);
 
 ** Integer operability
 
 * total committed units must be less than installed units
 
-eq_uc_units(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_units(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_com_units(h,z,non_vre)
-        =L= var_tot_n_units(z,non_vre);
+        var_com_units(h,z,g)
+        =L= var_tot_n_units(z,g);
 
 * committment state of units
 
-eq_uc_unit_state(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_unit_state(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_com_units(h,z,non_vre) =E= var_com_units(h-1,z,non_vre)
-            +var_up_units(h,z,non_vre)-var_down_units(h,z,non_vre);
+        var_com_units(h,z,g) =E= var_com_units(h-1,z,g)
+            +var_up_units(h,z,g)-var_down_units(h,z,g);
 
 * maximum generation limit
 
-eq_uc_gen_max(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_gen_max(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_com_units(h,z,non_vre)*gen_unitsize(non_vre)*gen_af(non_vre)
-        =G= var_gen(h,z,non_vre) + var_res(h,z,non_vre)
-$IF "%f_res%" == ON +var_f_res(h,z,non_vre)
+        var_com_units(h,z,g)*gen_unitsize(g)*gen_af(g)
+        =G= var_gen(h,z,g) + var_res(h,z,g)
+$IF "%f_res%" == ON +var_f_res(h,z,g)
         ;
 
 * minimum stable generation
 
-eq_uc_gen_min(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_gen_min(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_gen(h,z,non_vre) =G= var_com_units(h,z,non_vre)*gen_mingen(non_vre)
-            *gen_unitsize(non_vre);
+        var_gen(h,z,g) =G= var_com_units(h,z,g)*gen_mingen(g)
+            *gen_unitsize(g);
 
 * minimum up time
 
-eq_uc_gen_minup(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    (gen_minup(non_vre) > 1) and (ord(h) > 1) and uc_z(z))..
-        sum(map_minup(h,non_vre,h_alias),var_up_units(h_alias,z,non_vre))
-        =L= var_com_units(h,z,non_vre);
+eq_uc_gen_minup(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    (gen_minup(g) > 1) and (ord(h) > 1) and uc_z(z))..
+        sum(map_minup(h,g,h_alias),var_up_units(h_alias,z,g))
+        =L= var_com_units(h,z,g);
 
 * minimum down time
 
-eq_uc_gen_mindown(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
-    (gen_mindown(non_vre) > 1) and (ord(h) > 1) and uc_z(z))..
-        sum(map_mindown(h,non_vre,h_alias),var_down_units(h_alias,z,non_vre))
-        =L= var_tot_n_units(z,non_vre)-var_com_units(h,z,non_vre);
+eq_uc_gen_mindown(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
+    (gen_mindown(g) > 1) and (ord(h) > 1) and uc_z(z))..
+        sum(map_mindown(h,g,h_alias),var_down_units(h_alias,z,g))
+        =L= var_tot_n_units(z,g)-var_com_units(h,z,g);
 
 
 ** Linear operability
 
 
-eq_uc_units_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
+eq_uc_units_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_com_units_lin(h,z,non_vre) =L= var_tot_n_units_lin(z,non_vre);
+        var_com_units_lin(h,z,g) =L= var_tot_n_units_lin(z,g);
 
-eq_uc_unit_state_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
+eq_uc_unit_state_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g)
     and uc_z(z))..
-        var_com_units_lin(h,z,non_vre) =E= var_com_units_lin(h-1,z,non_vre)
-            +var_up_units_lin(h,z,non_vre)-var_down_units_lin(h,z,non_vre);
+        var_com_units_lin(h,z,g) =E= var_com_units_lin(h-1,z,g)
+            +var_up_units_lin(h,z,g)-var_down_units_lin(h,z,g);
 
-eq_uc_gen_max_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
+eq_uc_gen_max_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g)
     and uc_z(z))..
-        var_com_units_lin(h,z,non_vre)*gen_unitsize(non_vre)*gen_af(non_vre)
-        =G= var_gen(h,z,non_vre) + var_res(h,z,non_vre)
-$IF "%f_res%" == ON +var_f_res(h,z,non_vre)
+        var_com_units_lin(h,z,g)*gen_unitsize(g)*gen_af(g)
+        =G= var_gen(h,z,g) + var_res(h,z,g)
+$IF "%f_res%" == ON +var_f_res(h,z,g)
         ;
 
-eq_uc_gen_min_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
+eq_uc_gen_min_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_gen(h,z,non_vre) =G= var_com_units_lin(h,z,non_vre)*
-            gen_mingen(non_vre)*gen_unitsize(non_vre)*gen_af(non_vre);
+        var_gen(h,z,g) =G= var_com_units_lin(h,z,g)*
+            gen_mingen(g)*gen_unitsize(g)*gen_af(g);
 
-eq_uc_gen_minup_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre) and
-    (gen_minup(non_vre) > 1) and (ord(h) > 1) and uc_z(z))..
-        sum(map_minup(h,non_vre,h_alias),var_up_units_lin(h_alias,z,non_vre))
-        =L= var_com_units_lin(h,z,non_vre);
+eq_uc_gen_minup_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g) and
+    (gen_minup(g) > 1) and (ord(h) > 1) and uc_z(z))..
+        sum(map_minup(h,g,h_alias),var_up_units_lin(h_alias,z,g))
+        =L= var_com_units_lin(h,z,g);
 
-eq_uc_gen_mindown_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
-    and (gen_mindown(non_vre) > 1) and (ord(h) > 1) and uc_z(z))..
-        sum(map_mindown(h,non_vre,h_alias),
-            var_down_units_lin(h_alias,z,non_vre))
-        =L= var_tot_n_units_lin(z,non_vre)-var_com_units_lin(h,z,non_vre);
+eq_uc_gen_mindown_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g)
+    and (gen_mindown(g) > 1) and (ord(h) > 1) and uc_z(z))..
+        sum(map_mindown(h,g,h_alias),
+            var_down_units_lin(h_alias,z,g))
+        =L= var_tot_n_units_lin(z,g)-var_com_units_lin(h,z,g);
 
 
 
@@ -333,39 +332,39 @@ eq_uc_gen_mindown_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
 * Quickstart - units which can come online and ramp to full in the reserve
 *   window -> OCGT only
 
-eq_uc_reserve_quickstart(h,z,non_vre)$(gen_lim(z,non_vre) and gen_quick(non_vre)
+eq_uc_reserve_quickstart(h,z,g)$(gen_lim(z,g) and gen_quick(g)
     and uc_z(z))..
-        (var_tot_n_units_lin(z,non_vre)-var_com_units_lin(h,z,non_vre))*
-            gen_unitsize(non_vre)*gen_af(non_vre)
-        =G= var_res_quick(h,z,non_vre);
+        (var_tot_n_units_lin(z,g)-var_com_units_lin(h,z,g))*
+            gen_unitsize(g)*gen_af(g)
+        =G= var_res_quick(h,z,g);
 
 * Max reserve potential if needed - can be used to simulate different time
 *   scales over which reserve is offered
 
-eq_uc_max_reserve(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_max_reserve(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_res(h,z,non_vre) =L= var_com_units(h,z,non_vre)
-            *gen_max_res(non_vre,"reserve")*gen_af(non_vre);
+        var_res(h,z,g) =L= var_com_units(h,z,g)
+            *gen_max_res(g,"reserve")*gen_af(g);
 
-eq_uc_max_reserve_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
-    and not gen_quick(non_vre) and uc_z(z))..
-        var_res(h,z,non_vre) =L= var_com_units_lin(h,z,non_vre)
-            *gen_unitsize(non_vre)*gen_af(non_vre)
-            *gen_max_res(non_vre,"reserve");
+eq_uc_max_reserve_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g)
+    and not gen_quick(g) and uc_z(z))..
+        var_res(h,z,g) =L= var_com_units_lin(h,z,g)
+            *gen_unitsize(g)*gen_af(g)
+            *gen_max_res(g,"reserve");
 
 $ifThen "%f_res%" == ON
 
 * Max frequency response potential
 
-eq_uc_max_response(h,z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre) and
+eq_uc_max_response(h,z,g)$(gen_uc_int(g) and gen_lim(z,g) and
     uc_z(z))..
-        var_f_res(h,z,non_vre)=L= var_com_units(h,z,non_vre)
-            *gen_max_res(non_vre,"f_response")*gen_af(non_vre);
+        var_f_res(h,z,g)=L= var_com_units(h,z,g)
+            *gen_max_res(g,"f_response")*gen_af(g);
 
-eq_uc_max_response_lin(h,z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
+eq_uc_max_response_lin(h,z,g)$(gen_uc_lin(g) and gen_lim(z,g)
     and uc_z(z))..
-        var_f_res(h,z,non_vre) =L= var_com_units_lin(h,z,non_vre)
-            *gen_max_res(non_vre,"f_response")*gen_af(non_vre);
+        var_f_res(h,z,g) =L= var_com_units_lin(h,z,g)
+            *gen_max_res(g,"f_response")*gen_af(g);
 
 $endIf
 
@@ -513,12 +512,12 @@ $endIf.a
 
 eq_uc_reserve(h) ..
 *   spinning - only techs which can offer reserve
-    sum((z,non_vre)$(gen_lim(z,non_vre) and gen_max_res(non_vre,"reserve") > 0.
-    and uc_z(z)),var_res(h,z,non_vre))
+    sum((z,g)$(gen_lim(z,g) and gen_max_res(g,"reserve") > 0.
+    and uc_z(z)),var_res(h,z,g))
 
 *   quick start
-    +sum((z,non_vre)$(gen_lim(z,non_vre) and gen_quick(non_vre) and uc_z(z)),
-        var_res_quick(h,z,non_vre))
+    +sum((z,g)$(gen_lim(z,g) and gen_quick(g) and uc_z(z)),
+        var_res_quick(h,z,g))
         
 $ifthen "%store_uc%" == ON       
     +sum((z,s)$(s_lim(z,s) and store_uc_lin(s) and
@@ -549,9 +548,9 @@ $ifThen.a "%f_res%" == ON
 eq_uc_response(h)..
 
 *   spinning
-        sum((z,non_vre)$(gen_lim(z,non_vre) and
-            gen_max_res(non_vre,"f_response") > 0. and uc_z(z)),
-            var_f_res(h,z,non_vre))
+        sum((z,g)$(gen_lim(z,g) and
+            gen_max_res(g,"f_response") > 0. and uc_z(z)),
+            var_f_res(h,z,g))
 
 *   storage
 $ifthen.b "%storage%" == ON

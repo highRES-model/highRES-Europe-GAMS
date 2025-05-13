@@ -48,11 +48,11 @@ parameter gen_exist_ecap_z(z,g,lt);
 parameter gen_exist_pcap_r(vre,z,r,lt);									   
 parameter gen_fx_natcap(g);
 
-parameter gen_unitsize(non_vre);
-parameter gen_startupcost(non_vre);
-parameter gen_minup(non_vre);
-parameter gen_mindown(non_vre);
-parameter gen_inertia(non_vre);
+parameter gen_unitsize(g);
+parameter gen_startupcost(g);
+parameter gen_minup(g);
+parameter gen_mindown(g);
+parameter gen_inertia(g);
 
 parameter trans_links_cap(z,z_alias,trans);
 parameter trans_links_lim_cap(z,z_alias,trans);
