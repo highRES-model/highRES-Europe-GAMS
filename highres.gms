@@ -85,7 +85,8 @@ $setglobal store_uc "ON"
 
 ** Unit comittment switches
 
-$setglobal f_res "OFF"
+$setglobal f_res "ON"
+$setglobal f_res_mode "fixed"
 
 * Case options
 
@@ -343,7 +344,7 @@ var_pgen(h,z)                      Penalty generation
 * Synchronous condensers can have negative generation - they require energy to
 *   function
 
-* var_gen.LO(h,z,"SynCon")=-inf;
+$IF "%f_res%" == ON var_gen.LO(h,z,"SynCon")=-inf;
 
 *** Transmission set up ***
 

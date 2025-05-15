@@ -381,8 +381,10 @@ var_H(h)                                 system inertia per hour (GWs per Hz)
 
 
 scalar f_0 / 50. /;
+scalar fmax / 0.8/;
 scalar p_loss / 1650. /;
 scalar p_loss_inertia  / 7./;
+scalar rocof_lim / 0.5/;
 
 *positive variable var_inertia(h);
 
@@ -391,13 +393,13 @@ scalar p_loss_inertia  / 7./;
 * compute system inertia
 
 eq_uc_H(h)..
-    var_H(h) =E= sum((z,non_vre)$(gen_uc_int(non_vre) and gen_lim(z,non_vre)
-                    and uc_z(z)),gen_inertia(non_vre)*var_com_units(h,z,non_vre)
-                    *(gen_unitsize(non_vre)*MWtoGW/1E3)/f_0)
-                    +sum((z,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)
-                        and uc_z(z)),gen_inertia(non_vre)
-                        *var_com_units_lin(h,z,non_vre)
-                        *(gen_unitsize(non_vre)*MWtoGW/1E3)/f_0)
+    var_H(h) =E= sum((z,g)$(gen_uc_int(g) and gen_lim(z,g)
+                    and uc_z(z)),gen_inertia(g)*var_com_units(h,z,g)
+                    *(gen_unitsize(g)*MWtoGW/1E3)/f_0)
+                    +sum((z,g)$(gen_uc_lin(g) and gen_lim(z,g)
+                        and uc_z(z)),gen_inertia(g)
+                        *var_com_units_lin(h,z,g)
+                        *(gen_unitsize(g)*MWtoGW/1E3)/f_0)
 $ifthen.b "%store_uc%" == ON
     +sum((z,s)$(s_lim(z,s) and uc_z(z) and store_uc_lin(s)),
     store_inertia(s)*var_store_com_units_lin(h,z,s)*(store_unitsize(s)*MWtoGW/1E3)/f_0);
@@ -405,9 +407,23 @@ $endif.b
 
 * -((p_loss/1E3)*p_loss_inertia/f_0);
 
-var_H.LO(h) = 0.825;
-*var_H.LO(h) = 0.825*2;
-*var_H.UP(h) = 9..
+* minimum inertia from rocof limit
+* equation 5 from https://www.sciencedirect.com/science/article/pii/S0360544220308835
+
+scalar H_min;
+
+H_min=(p_loss/MWtoGW)/(2*rocof_lim);
+
+var_H.LO(h) = H_min;
+
+
+$ifthen.b "%f_res_mode%" == dynamic
+
+positive variable var_freq_req(h);
+
+equations
+eq_uc_freq_req
+;
 
 
 set seg /1*8/;
@@ -427,17 +443,6 @@ table linearise(seg,lin_param)
 
 ;
 
-
-*var_H.UP(h) = 9.;
-*var_H.LO(h) = 1.;
-
-
-
-equations
-eq_uc_freq_req
-;
-
-positive variable var_freq_req(h);
 
 * Frequency nadir has to be reached by delivery time => 5 seconds in this case
 * issue with setting delivery time to 1 second means Td < Tn, below ensures that
@@ -459,6 +464,15 @@ var_freq_req.LO(h)=p_loss/MWtoGW;
 eq_uc_freq_req(h,seg)..
     var_freq_req(h) =G= (linearise(seg,"slope")*var_H(h)
         +linearise(seg,"intercept"))*1E3/MWtoGW;
+        
+$elseif.b "%f_res_mode%" == fixed
+
+parameter var_freq_req(h);
+
+var_freq_req(h)=((p_loss/MWtoGW)**2)*(f_res_time*60)/(4*fmax*H_min);
+
+$endIf.b
+
 
 
 $endIf.a
