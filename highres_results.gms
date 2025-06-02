@@ -27,6 +27,59 @@ o_store_res_provision(h,s)=sum(s_lim(z,s)$(store_max_res(s) > 0. and uc_z(z)),
 $endIf.a
 
 
+$ontext
+
+* Testing out trade capex and congestion rent calculations
+
+parameter o_trans_net_flow(h,z,z_alias);
+
+*o_trans_net_flow(h,z,z_alias)=sum(trans_links(z,z_alias,trans),var_trans_flow.l(h,z,z_alias,trans)*(1-(trans_links_dist_bidir(z,z_alias,trans)*trans_loss(trans))))
+
+o_trans_net_flow(h,z,z_alias)=sum(trans_links(z,z_alias,trans),var_trans_flow.l(h,z,z_alias,trans))
+
+-sum(trans_links(z,z_alias,trans),var_trans_flow.l(h,z_alias,z,trans));
+
+
+parameter o_trade_cost(z);
+
+o_trade_cost(z)=sum((h,z_alias),o_trans_net_flow(h,z,z_alias)*eq_elc_balance.m(h,z));
+
+
+parameter o_eprice_delta_1(h,z,z_alias);
+parameter o_eprice_delta_2(h,z_alias,z);
+
+o_eprice_delta_1(h,z,z_alias)$(sum(trans,trans_links(z,z_alias,trans)))=eq_elc_balance.m(h,z)-eq_elc_balance.m(h,z_alias);
+o_eprice_delta_2(h,z_alias,z)=-o_eprice_delta_1(h,z,z_alias);
+
+parameter o_trans_crent_1(h,z,z_alias);
+*parameter o_trans_crent_2(h,z_alias,z);
+
+o_trans_crent_1(h,z,z_alias)$(o_trans_net_flow(h,z,z_alias) < 0)=o_trans_net_flow(h,z,z_alias)*o_eprice_delta_2(h,z_alias,z);
+*o_trans_crent_2(h,z_alias,z)$(o_trans_net_flow(h,z,z_alias) > 0)=o_trans_net_flow(h,z,z_alias)*o_eprice_delta_z_uk(h,z_alias,z);
+
+parameter o_trade_crent(z);
+
+o_trade_crent(z)=sum((h,z_alias),o_trans_crent_1(h,z,z_alias));
+
+
+
+parameter o_trade_capex(z,z_alias);
+
+o_trade_capex(z,z_alias)=(sum(trans_links(z,z_alias,trans),var_new_trans_pcap.l(z,z_alias,trans)*trans_links_dist(z,z_alias,trans)*trans_line_capex(trans))
++sum(trans_links(z,z_alias,trans),var_new_trans_pcap.l(z,z_alias,trans)$(trans_links_dist(z,z_alias,trans))*trans_sub_capex(trans)*2));
+
+parameter o_trade_capex1(z);
+o_trade_capex1(z)=sum(trans_links(z,z_alias,trans),
+        var_new_trans_pcap.l(z,z_alias,trans)*trans_links_dist(z,z_alias,trans)
+        *trans_line_capex(trans))
+    +sum(trans_links(z,z_alias,trans),
+        var_new_trans_pcap.l(z,z_alias,trans)$(trans_links_dist(z,z_alias,trans))
+        *trans_sub_capex(trans)*2);
+
+$offtext
+
+
+
 
 ***************
 *Costs
