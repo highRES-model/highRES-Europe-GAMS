@@ -157,7 +157,8 @@ var_tot_store_pcap_z.FX(z,s)$(store_lim_pcap_z(z,s,'FX'))
     =store_lim_pcap_z(z,s,'FX');
 
 $ifThen "%EV%" == ON
-var_tot_store_pcap_z.FX(z,"EV") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
+store_lim_pcap_z(z,"EV","FX") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
+var_tot_store_pcap_z.FX(z,"EV") = store_lim_pcap_z(z,"EV","FX");
 $else
 var_tot_store_pcap_z.FX(z,"EV") = 0.0;
 $endIf
@@ -172,7 +173,8 @@ var_tot_store_ecap_z.FX(z,s)$(store_lim_ecap_z(z,s,'FX'))
     =store_lim_ecap_z(z,s,'FX');
 
 $ifThen "%EV%" == ON
-var_tot_store_ecap_z.FX(z,"EV") = s_ev_ecap*par_vehicles(z)*s_EV_flex;
+store_lim_ecap_z(z,"EV","FX") = s_ev_ecap*par_vehicles(z)*s_EV_flex;
+var_tot_store_ecap_z.FX(z,"EV") = store_lim_ecap_z(z,"EV","FX");
 $else
 var_tot_store_ecap_z.FX(z,"EV") = 0.0;
 $endIf
