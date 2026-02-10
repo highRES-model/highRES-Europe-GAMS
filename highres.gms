@@ -55,6 +55,9 @@ $offdigit
 * pen_gen (ON/OFF) = whether value of lost load (VoLL) is modelled
 * pgen = pen_gen cost
 *
+* EV (ON/OFF) = whether to model electric vehicle charging through the storage module
+* EV_flex (%) = percentage of electric vehicles modelled as flexible
+* V2G (ON/OFF) = whether flexible EV charging allows for vehicle to grid (V2G)
 *
 * DISABLED switches
 *
@@ -114,6 +117,13 @@ $setglobal hydro_res_min "0.5"
 
 $set pen_gen "OFF"
 $setglobal pgen "20.0"
+
+* Caution: EV is not implemented for UC
+$setglobal EV "OFF"
+$ifThen "%EV%" == ON
+$setglobal EV_flex "0"
+$setglobal V2G "OFF"
+$endif
 
 * Disabled switches
 $setglobal water "OFF"
@@ -671,6 +681,8 @@ $ifThen "%storage%" == ON
 $endIf
 
 $IF "%pen_gen%" == ON +var_pgen(h,z)
+
+$IF "%EV%" == ON - (par_ev_charging(h)*par_vehicles(z)*(1-s_EV_flex))/store_eff_in("EV")
 
 =E= demand(z,h);
 

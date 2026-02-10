@@ -48,7 +48,39 @@ parameter store_maxramp(s);
 
 $INCLUDE %datafolderpath%/%psys_scen%_store.dd
 
+$ifThen "%EV%" == ON
+set v(s) / EV /;
 
+parameter par_vehicles(z) "number of vehicles per zone" /
+$include %datafolderpath%/ev_data/vehicles_zones.tsv
+/;
+
+parameter par_driving_demand(h,s) "electricity use while driving per car [MWh]" /
+$include %datafolderpath%/ev_data/demand_driving_MWh.tsv
+/;
+
+par_driving_demand(h,s) = par_driving_demand(h,s)/MWtoGW;
+
+parameter par_grid_connected(h) "average fraction of grid connected power available per car"  /
+$include %datafolderpath%/ev_data/grid_connected_vehicles.tsv
+/;
+
+parameter par_ev_charging(h) "demand for EV charging per vehicle" /
+$include %datafolderpath%/ev_data/demand_ev_charging_MWh.tsv
+/;
+
+par_ev_charging(h) = par_ev_charging(h)/MWtoGW;
+
+scalars
+$include %datafolderpath%/ev_data/ev_scalars.tsv
+s_EV_flex "fraction of vehicles which are flexible" /%EV_flex%/
+;
+
+s_EV_flex = s_EV_flex/100;
+s_ev_ecap = s_ev_ecap/MWtoGW;
+s_ev_pcap = s_ev_pcap/MWtoGW;
+
+$endIf
 
 *store_ecapex(s)=store_ecapex%model_yr%(s);
 
@@ -99,6 +131,8 @@ var_exist_store_pcap_z.FX(z,s)$(store_exist_pcap_z(z,s,"FX"))
 
 var_exist_store_pcap_z.FX(z,s)$(not var_exist_store_pcap_z.l(z,s)) = 0.0;
 
+$IF "%EV%" == ON var_exist_store_pcap_z.FX(z,"EV") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
+
 * existing storage energy capacity
 
 var_exist_store_ecap_z.UP(z,s)$(store_exist_ecap_z(z,s,"UP"))
@@ -111,6 +145,8 @@ var_exist_store_ecap_z.FX(z,s)$(store_exist_ecap_z(z,s,"FX"))
 
 var_exist_store_ecap_z.FX(z,s)$(not var_exist_store_ecap_z.l(z,s)) = 0.0;
 
+$IF "%EV%" == ON var_exist_store_ecap_z.FX(z,"EV") = s_ev_ecap*par_vehicles(z)*s_EV_flex;
+
 * limits on total storage generation capacity
 
 var_tot_store_pcap_z.UP(z,s)$(store_lim_pcap_z(z,s,'UP'))
@@ -119,6 +155,12 @@ var_tot_store_pcap_z.LO(z,s)$(store_lim_pcap_z(z,s,'LO'))
     =store_lim_pcap_z(z,s,'LO');
 var_tot_store_pcap_z.FX(z,s)$(store_lim_pcap_z(z,s,'FX'))
     =store_lim_pcap_z(z,s,'FX');
+
+$ifThen "%EV%" == ON
+var_tot_store_pcap_z.FX(z,"EV") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
+$else
+var_tot_store_pcap_z.FX(z,"EV") = 0.0;
+$endIf
 
 * limits on total storage storage capacity
 
@@ -129,11 +171,24 @@ var_tot_store_ecap_z.LO(z,s)$(store_lim_ecap_z(z,s,'LO'))
 var_tot_store_ecap_z.FX(z,s)$(store_lim_ecap_z(z,s,'FX'))
     =store_lim_ecap_z(z,s,'FX');
 
+$ifThen "%EV%" == ON
+var_tot_store_ecap_z.FX(z,"EV") = s_ev_ecap*par_vehicles(z)*s_EV_flex;
+$else
+var_tot_store_ecap_z.FX(z,"EV") = 0.0;
+$endIf
 
 *var_tot_store_gen_cap.FX(s)$(store_fx_natcap(s))=store_fx_natcap(s);
 
 *var_store_level.FX(z,"0",s)=0;
 
+$ifThen "%EV%" == ON
+* state of charge lower and upper limit
+var_store_level.LO(h,z,"EV") = s_ev_soc_min*s_ev_ecap*par_vehicles(z)*s_EV_flex;
+var_store_level.UP(h,z,"EV") = s_ev_soc_max*s_ev_ecap*par_vehicles(z)*s_EV_flex;
+
+* disable bidirectional charging when only modelling flexible charging
+$IF "%V2G%" == OFF var_store_gen.FX(h,z,"EV") = 0;
+$endIf
 
 set s_lim(z,s);
 *s_lim(z,s) = YES;
@@ -205,10 +260,12 @@ hlast(h) = yes$(ord(h) eq card(h));
 * right now there is no ramp for storage
 
 eq_store_balance(h,s_lim(z,s))..
-    var_store_level(h,z,s) =E= var_store_level(h-1,z,s)*(1-store_loss_per_hr(s))
-    + var_store(h,z,s)*store_eff_in(s) - var_store_gen(h,z,s)
-    *round(1/store_eff_out(s),3)
-    + (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*%store_initial_level%)$hfirst(h);
+var_store_level(h,z,s) =E= var_store_level(h-1,z,s)*(1-store_loss_per_hr(s))
++ var_store(h,z,s)*store_eff_in(s) 
+- var_store_gen(h,z,s)*round(1/store_eff_out(s),3)
++ (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*%store_initial_level%)$hfirst(h)
+$IF "%EV%" == ON - (par_vehicles(z)*s_EV_flex*par_driving_demand(h,s)) $ v(s)
+;
 
 
 
@@ -224,8 +281,15 @@ eq_store_ecap_max(z,s)$(s_lim(z,s) and store_p_to_e(s) > 0.)..
 
 * eq_store_ecap_max_free(z,s)$(s_lim(z,s) and store_p_to_e(s) = 0.) ..
 
+$ifThen "%EV%" == ON
 eq_store_charge_max(s_lim(z,s),h)..
-    var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s);
+var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s) * (1 + (par_connected_vehicles(h) - 1) $ v(s))
+;
+$else
+eq_store_charge_max(s_lim(z,s),h)..
+var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
+;
+$endIf
 
 *equation eq_store_charge_max2;
 * eq_store_charge_max2(s_lim(z,s),h)$(store_uc_lin(s))..
@@ -261,6 +325,11 @@ $IF "%f_res%" == ON +var_store_f_res(h,z,s)
 eq_store_gen_max2(s_lim(z,s),h)..
     var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s);
 
+$elseIf "%EV%" == ON
+*this implementation prevents the use of UC togheter with EV.
+
+eq_store_gen_max1(s_lim(z,s),h)..
+    var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s) * (1 + (par_connected_vehicles(h) - 1) $ v(s));
 
 $else
 
