@@ -281,15 +281,11 @@ eq_store_ecap_max(z,s)$(s_lim(z,s) and store_p_to_e(s) > 0.)..
 
 * eq_store_ecap_max_free(z,s)$(s_lim(z,s) and store_p_to_e(s) = 0.) ..
 
-$ifThen "%EV%" == ON
 eq_store_charge_max(s_lim(z,s),h)..
-var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s) * (1 + (par_connected_vehicles(h) - 1) $ v(s))
+var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s) 
+$IF "%EV%" == ON
+ * (1 + (par_grid_connected(h) - 1) $ v(s))
 ;
-$else
-eq_store_charge_max(s_lim(z,s),h)..
-var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
-;
-$endIf
 
 *equation eq_store_charge_max2;
 * eq_store_charge_max2(s_lim(z,s),h)$(store_uc_lin(s))..
@@ -325,16 +321,13 @@ $IF "%f_res%" == ON +var_store_f_res(h,z,s)
 eq_store_gen_max2(s_lim(z,s),h)..
     var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s);
 
-$elseIf "%EV%" == ON
-*this implementation prevents the use of UC togheter with EV.
-
-eq_store_gen_max1(s_lim(z,s),h)..
-    var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s) * (1 + (par_connected_vehicles(h) - 1) $ v(s));
-
 $else
 
 eq_store_gen_max1(s_lim(z,s),h)..
-    var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s);
+var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
+$IF "%EV%" == ON
+ * (1 + (par_grid_connected(h) - 1) $ v(s))
+;
 
 $endIf
 
