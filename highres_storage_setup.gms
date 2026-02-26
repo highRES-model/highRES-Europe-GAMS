@@ -52,9 +52,9 @@ $ifThen "%EV%" == ON
 set v(s) / EV /;
 
 parameter par_vehicles(z)           number of vehicles per zone;
-parameter par_driving_demand(h,s)   electricity use while driving per car (MWh);
-parameter par_grid_connected(h)     average fraction of grid connected power available per car;
-parameter par_ev_charging(h)        demand for EV charging per vehicle;
+parameter par_driving_demand(z,h,s)   electricity use while driving per car (MWh);
+parameter par_grid_connected(z,h)     average fraction of grid connected power available per car;
+parameter par_ev_charging(z,h)        demand for EV charging per vehicle;
 parameter par_ev_ecap(z)            battery energy capacity per vehicle per zone (MWh);
 
 $INCLUDE %datafolderpath%/ev_data.dd
@@ -66,8 +66,8 @@ s_ev_soc_min /%EV_soc_min%/
 s_ev_soc_max /%EV_soc_max%/
 ;
 
-par_driving_demand(h,s) = par_driving_demand(h,s)/MWtoGW;
-par_ev_charging(h) = par_ev_charging(h)/MWtoGW;
+par_driving_demand(z,h,s) = par_driving_demand(z,h,s)/MWtoGW;
+par_ev_charging(z,h) = par_ev_charging(z,h)/MWtoGW;
 par_ev_ecap(z) = par_ev_ecap(z)/MWtoGW;
 
 s_EV_flex = s_EV_flex/100;
@@ -259,7 +259,7 @@ var_store_level(h,z,s) =E= var_store_level(h-1,z,s)*(1-store_loss_per_hr(s))
 + var_store(h,z,s)*store_eff_in(s) 
 - var_store_gen(h,z,s)*round(1/store_eff_out(s),3)
 + (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*%store_initial_level%)$hfirst(h)
-$IF "%EV%" == ON - (par_vehicles(z)*s_EV_flex*par_driving_demand(h,s)) $ v(s)
+$IF "%EV%" == ON - (par_vehicles(z)*s_EV_flex*par_driving_demand(z,h,s)) $ v(s)
 ;
 
 
@@ -279,7 +279,7 @@ eq_store_ecap_max(z,s)$(s_lim(z,s) and store_p_to_e(s) > 0.)..
 eq_store_charge_max(s_lim(z,s),h)..
 var_store(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s) 
 $IF "%EV%" == ON
- * (1 + (par_grid_connected(h) - 1) $ v(s))
+ * (1 + (par_grid_connected(z,h) - 1) $ v(s))
 ;
 
 *equation eq_store_charge_max2;
@@ -321,7 +321,7 @@ $else
 eq_store_gen_max1(s_lim(z,s),h)..
 var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
 $IF "%EV%" == ON
- * (1 + (par_grid_connected(h) - 1) $ v(s))
+ * (1 + (par_grid_connected(z,h) - 1) $ v(s))
 ;
 
 $endIf

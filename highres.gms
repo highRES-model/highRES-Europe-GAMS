@@ -682,7 +682,7 @@ $endIf
 
 $IF "%pen_gen%" == ON +var_pgen(h,z)
 
-$IF "%EV%" == ON - (par_ev_charging(h)*par_vehicles(z)*(1-s_EV_flex))/store_eff_in("EV")
+$IF "%EV%" == ON - (par_ev_charging(z,h)*par_vehicles(z)*(1-s_EV_flex))/store_eff_in("EV")
 
 =E= demand(z,h);
 
