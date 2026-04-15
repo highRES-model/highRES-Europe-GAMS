@@ -85,6 +85,7 @@ $setglobal hydrores "ON"
 $setglobal sensitivity "OFF"
 $setglobal UC "OFF"
 $setglobal store_uc "OFF"
+$setglobal mga "OFF"
 
 ** Unit comittment switches
 
@@ -129,6 +130,7 @@ $endif
 $setglobal water "OFF"
 $setglobal fx_natcap "NO"
 
+$setglobal mode "minimizing"
 
 
 **************************************************
@@ -154,7 +156,6 @@ $IF "%storage%" == ON $INCLUDE %codefolderpath%/highres_storage_setup.gms
 
 * WARNING: for parameter updates to work there can be no arithmetic in the code
 * before the update is run -> sensitivity data must be imported here
-
 
 $IF "%sensitivity%" == ON $INCLUDE %datafolderpath%/sensitivity_%sense_run%.dd
 
@@ -307,6 +308,7 @@ store_ecapex(s)=round(store_ecapex(s)*(card(h)/8760.),8);
 
 
 Variables
+obj                                      objective
 costs                                    total electricty system costs
 
 * Total cost components
@@ -514,6 +516,7 @@ $endIf
 
 Equations
 eq_obj
+eq_sys_costs
 
 eq_costs_gen_capex
 eq_costs_gen_fom
@@ -560,10 +563,11 @@ eq_co2_target
 ;
 
 ******************************************
-* OBJECTIVE FUNCTION
+* TOTAL SYSTEM COST (OBJECTIVE FUNCTION BY DEFAULT)
 ******************************************
 
-eq_obj .. costs =E= sum(z,
+
+eq_sys_costs .. costs =E= sum(z,
 
 costs_gen_capex(z)
 +costs_gen_fom(z)
@@ -595,14 +599,14 @@ eq_costs_gen_fom(z)..
 eq_costs_gen_varom(z)..
     costs_gen_varom(z) =E= sum((h,gen_lim(z,g)),var_gen(h,z,g)*gen_varom(g));
 
-$ifThen "%UC%" == ON
+$ifThen.uc "%UC%" == ON
     eq_costs_gen_start(z)..
         costs_gen_start(z) =E= sum((h,non_vre)$(gen_uc_int(non_vre) and
             gen_lim(z,non_vre)),var_up_units(h,z,non_vre)
             *gen_startupcost(non_vre))
         +sum((h,non_vre)$(gen_uc_lin(non_vre) and gen_lim(z,non_vre)),
             var_up_units_lin(h,z,non_vre)*gen_startupcost(non_vre));
-$endIf
+$endIf.uc
 
 $ifThen "%pen_gen%" == ON
     eq_pen_gen(z)..
@@ -873,7 +877,17 @@ $IF "%RPS%" == "optimal" $GOTO optimal
         =E= dem_tot*(1-RPS_scalar);
 $label optimal
 
+$ifThen.mga "%mga%" == ON
 
+$include %codefolderpath%/highres_mga.gms
+
+eq_obj.. obj =E= mga_objective;
+
+$else.mga
+
+eq_obj.. obj =E= costs;
+
+$endIf.mga
 
 Model Dispatch /all/;
 
@@ -884,15 +898,15 @@ Model Dispatch /all/;
 Dispatch.OptFile = 1;
 
 
-$ifThen "%UC%" == ON
+$ifThen.uc "%UC%" == ON
 
-Solve Dispatch minimizing costs using MIP;
+Solve Dispatch %mode% obj using MIP;
 
-$else
+$else.uc
 
-Solve Dispatch minimizing costs using LP;
+Solve Dispatch %mode% obj using LP;
 
-$endIf
+$endIf.uc
 
 
 parameter trans_f(h,z,z_alias,trans);
