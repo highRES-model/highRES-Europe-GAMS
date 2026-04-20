@@ -51,17 +51,16 @@ $INCLUDE %datafolderpath%/%psys_scen%_store.dd
 $ifThen "%EV%" == ON
 set v(s) / EV /;
 
-parameter par_vehicles(z)           number of vehicles per zone;
-parameter par_driving_demand(z,h,s)   electricity use while driving per car (MWh);
-parameter par_grid_connected(z,h)     average fraction of grid connected power available per car;
-parameter par_ev_charging(z,h)        demand for EV charging per vehicle;
-parameter par_ev_ecap(z)            battery energy capacity per vehicle per zone (MWh);
+parameter par_driving_demand(z,h,s)   EV driving electricity use (MWh);
+parameter par_grid_connected(z,h)     fraction of EV grid connected power available;
+parameter par_ev_charging(z,h)        EV immediate charging demand (MWh);
+parameter par_ev_ecap(z)            EV battery energy capacity (MWh);
+parameter par_ev_pcap(z)            EV battery power capacity (MW);
 
 $INCLUDE %datafolderpath%/ev_data.dd
 
 scalars
 s_EV_flex "fraction of vehicles which are flexible" /%EV_flex%/
-s_ev_pcap /%EV_pcap%/
 s_ev_soc_min /%EV_soc_min%/
 s_ev_soc_max /%EV_soc_max%/
 ;
@@ -69,9 +68,9 @@ s_ev_soc_max /%EV_soc_max%/
 par_driving_demand(z,h,s) = par_driving_demand(z,h,s)/MWtoGW;
 par_ev_charging(z,h) = par_ev_charging(z,h)/MWtoGW;
 par_ev_ecap(z) = par_ev_ecap(z)/MWtoGW;
+par_ev_pcap(z) = par_ev_pcap(z)/MWtoGW;
 
 s_EV_flex = s_EV_flex/100;
-s_ev_pcap = s_ev_pcap/MWtoGW;
 
 $endIf
 
@@ -124,7 +123,7 @@ var_exist_store_pcap_z.FX(z,s)$(store_exist_pcap_z(z,s,"FX"))
 
 var_exist_store_pcap_z.FX(z,s)$(not var_exist_store_pcap_z.l(z,s)) = 0.0;
 
-$IF "%EV%" == ON var_exist_store_pcap_z.FX(z,"EV") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
+$IF "%EV%" == ON var_exist_store_pcap_z.FX(z,"EV") = par_ev_pcap(z)*s_EV_flex;
 
 * existing storage energy capacity
 
@@ -138,7 +137,7 @@ var_exist_store_ecap_z.FX(z,s)$(store_exist_ecap_z(z,s,"FX"))
 
 var_exist_store_ecap_z.FX(z,s)$(not var_exist_store_ecap_z.l(z,s)) = 0.0;
 
-$IF "%EV%" == ON var_exist_store_ecap_z.FX(z,"EV") = par_ev_ecap(z)*par_vehicles(z)*s_EV_flex;
+$IF "%EV%" == ON var_exist_store_ecap_z.FX(z,"EV") = par_ev_ecap(z)*s_EV_flex;
 
 * limits on total storage generation capacity
 
@@ -150,7 +149,7 @@ var_tot_store_pcap_z.FX(z,s)$(store_lim_pcap_z(z,s,'FX'))
     =store_lim_pcap_z(z,s,'FX');
 
 $ifThen "%EV%" == ON
-store_lim_pcap_z(z,"EV","FX") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
+store_lim_pcap_z(z,"EV","FX") = par_ev_pcap(z)*s_EV_flex;
 var_tot_store_pcap_z.FX(z,"EV") = store_lim_pcap_z(z,"EV","FX");
 *$else
 * I don't think this is needed because if EV is OFF but EV is still
@@ -169,7 +168,7 @@ var_tot_store_ecap_z.FX(z,s)$(store_lim_ecap_z(z,s,'FX'))
     =store_lim_ecap_z(z,s,'FX');
 
 $ifThen "%EV%" == ON
-store_lim_ecap_z(z,"EV","FX") = par_ev_ecap(z)*par_vehicles(z)*s_EV_flex;
+store_lim_ecap_z(z,"EV","FX") = par_ev_ecap(z)*s_EV_flex;
 var_tot_store_ecap_z.FX(z,"EV") = store_lim_ecap_z(z,"EV","FX");
 *$else
 * I don't think this is needed because if EV is OFF but EV is still
@@ -184,8 +183,8 @@ $endIf
 
 $ifThen "%EV%" == ON
 * state of charge lower and upper limit
-var_store_level.LO(h,z,"EV") = s_ev_soc_min*par_ev_ecap(z)*par_vehicles(z)*s_EV_flex;
-var_store_level.UP(h,z,"EV") = s_ev_soc_max*par_ev_ecap(z)*par_vehicles(z)*s_EV_flex;
+var_store_level.LO(h,z,"EV") = s_ev_soc_min*par_ev_ecap(z)*s_EV_flex;
+var_store_level.UP(h,z,"EV") = s_ev_soc_max*par_ev_ecap(z)*s_EV_flex;
 
 * disable bidirectional charging when only modelling flexible charging
 $IF "%V2G%" == OFF var_store_gen.FX(h,z,"EV") = 0;
@@ -265,7 +264,7 @@ var_store_level(h,z,s) =E= var_store_level(h-1,z,s)*(1-store_loss_per_hr(s))
 + var_store(h,z,s)*store_eff_in(s) 
 - var_store_gen(h,z,s)*round(1/store_eff_out(s),3)
 + (var_tot_store_ecap_z(z,s)$(s_lim(z,s))*%store_initial_level%)$hfirst(h)
-$IF "%EV%" == ON - (par_vehicles(z)*s_EV_flex*par_driving_demand(z,h,s)) $ v(s)
+$IF "%EV%" == ON - (s_EV_flex*par_driving_demand(z,h,s)) $ v(s)
 ;
 
 
