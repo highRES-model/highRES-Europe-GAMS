@@ -503,7 +503,16 @@ $IF "%f_res%" == ON +var_store_f_res(h,z,s)
 
 eq_uc_store_res_max(h,s_lim(z,s))$(uc_z(z) and not store_uc_lin(s))..
     var_store_res(h,z,s)
-    =L= var_tot_store_pcap_z(z,s)*store_af(s)*store_max_res(s);
+    =L= var_tot_store_pcap_z(z,s)*store_af(s)*store_max_res(s)
+    
+* If EV is on and V2G is on then EV can provide reserve
+$ifthenE.c (sameas('%EV%','ON'))and(sameas('%V2G%','ON'))
+    * (1 + (par_grid_connected(z,h) - 1) $ v(s))
+* If EV is on and V2G is off then EV cannot provide reserve
+$elseifE.c (sameas('%EV%','ON'))and(sameas('%V2G%','OFF'))
+    * (1 + (0. - 1) $ v(s))
+$endif.c
+;
 
 * limits resposne offered by storage based on how much of its capacity can come
 *   online within the response window - only for techs which can offer response
@@ -515,7 +524,15 @@ $ifThen.b "%f_res%" == ON
 eq_uc_store_f_res_max(h,s_lim(z,s))$(uc_z(z) and not
 store_uc_lin(s))..
 var_store_f_res(h,z,s) 
-=L= var_tot_store_pcap_z(z,s)*store_af(s)*store_max_freq(s);
+=L= var_tot_store_pcap_z(z,s)*store_af(s)*store_max_freq(s)
+* If EV is on and V2G is on then EV can provide freq response
+$ifthenE.c (sameas('%EV%','ON'))and(sameas('%V2G%','ON'))
+    * (1 + (par_grid_connected(z,h) - 1) $ v(s))
+* If EV is on and V2G is off then EV cannot provide freq response
+$elseifE.c (sameas('%EV%','ON'))and(sameas('%V2G%','OFF'))
+    * (1 + (0. - 1) $ v(s))
+$endif.c
+;
 
 $endif.b
 
