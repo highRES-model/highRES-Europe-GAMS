@@ -5,16 +5,15 @@ Sets
 
 lt / UP, LO, FX /
 
+set z;
+$IF "%UC%" == ON set uc_z;
+
+$INCLUDE %datafolderpath%/zones.dd
 
 r regions /
 $BATINCLUDE %datafolderpath%/%vre_restrict%_regions.dd
 /
-
-z zones /
-$BATINCLUDE %datafolderpath%/zones.dd
-/
 ;
-
 
 $INCLUDE %datafolderpath%/%weather_yr%_temporal.dd
 

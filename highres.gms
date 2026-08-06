@@ -162,11 +162,6 @@ ramp_and_mingen(z,non_vre)
 
 $ifThen "%UC%" == ON
 
-* UC on for all zones by default
-
-set uc_z(z);
-uc_z(z)=YES;
-
 * generators that are represented as continous linear capacity chunks
 
 gen_lin(z,non_vre)=not ((gen_uc_lin(non_vre) or gen_uc_int(non_vre)) and
