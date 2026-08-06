@@ -152,8 +152,11 @@ var_tot_store_pcap_z.FX(z,s)$(store_lim_pcap_z(z,s,'FX'))
 $ifThen "%EV%" == ON
 store_lim_pcap_z(z,"EV","FX") = s_ev_pcap*par_vehicles(z)*s_EV_flex;
 var_tot_store_pcap_z.FX(z,"EV") = store_lim_pcap_z(z,"EV","FX");
-$else
-var_tot_store_pcap_z.FX(z,"EV") = 0.0;
+*$else
+* I don't think this is needed because if EV is OFF but EV is still
+* in storage set s in won't appear in s_lim (which is used in all the
+* equations) as it doesn't exist in store_lim_pcap_z/store_exist_pcap_z
+*var_tot_store_pcap_z.FX(z,"EV") = 0.0;
 $endIf
 
 * limits on total storage storage capacity
@@ -168,8 +171,11 @@ var_tot_store_ecap_z.FX(z,s)$(store_lim_ecap_z(z,s,'FX'))
 $ifThen "%EV%" == ON
 store_lim_ecap_z(z,"EV","FX") = par_ev_ecap(z)*par_vehicles(z)*s_EV_flex;
 var_tot_store_ecap_z.FX(z,"EV") = store_lim_ecap_z(z,"EV","FX");
-$else
-var_tot_store_ecap_z.FX(z,"EV") = 0.0;
+*$else
+* I don't think this is needed because if EV is OFF but EV is still
+* in storage set s in won't appear in s_lim (which is used in all the
+* equations) as it doesn't exist in store_lim_pcap_z/store_exist_pcap_z
+*var_tot_store_ecap_z.FX(z,"EV") = 0.0;
 $endIf
 
 *var_tot_store_gen_cap.FX(s)$(store_fx_natcap(s))=store_fx_natcap(s);
@@ -201,8 +207,8 @@ s_lim(z,s) = YES$(((sum(lt,store_lim_pcap_z(z,s,lt))
 equations
 eq_store_balance
 eq_store_level
-eq_store_gen_max1
-$if "%UC%" == ON eq_store_gen_max2
+eq_store_gen_max_uc_off
+$if "%UC%" == ON eq_store_gen_max_uc_on
 eq_store_charge_max
 eq_store_ecap_max
 
@@ -290,40 +296,47 @@ equation eq_store_end_level;
 eq_store_end_level(h,z,s)$(s_lim(z,s) and hlast(h))..
     var_store_level(h,z,s) =E= var_tot_store_ecap_z(z,s)*%store_final_level%;
 
-
-
-$ifThen "%UC%" == ON
+$ifThen.a "%UC%" == ON
 
 Positive variables
 var_store_res(h,z,s)
 $IF "%f_res%" == ON var_store_f_res(h,z,s)
 ;
 
-* max1 covers the more detailed part (should be removed)
-* line 73 at stoage_uc_setup.gms contains the equivalent to this but for UC
-*   technologies
+* generation max constraint for storage in zones where UC is
+* modelled
 
-* s_lim limits which zone can have which storage technology
-eq_store_gen_max1(s_lim(z,s),h)$(not store_uc_lin(s)) ..
+eq_store_gen_max_uc_on(s_lim(z,s),h)$(uc_z(z) and not store_uc_lin(s)) ..
 
 var_store_gen(h,z,s)+var_store_res(h,z,s)
 
 $IF "%f_res%" == ON +var_store_f_res(h,z,s)
 
-=L= var_tot_store_pcap_z(z,s)*store_af(s);
+=L= var_tot_store_pcap_z(z,s)*store_af(s)
 
-* max2 does cover the European part of the model
-eq_store_gen_max2(s_lim(z,s),h)..
-    var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s);
-
-$else
-
-eq_store_gen_max1(s_lim(z,s),h)..
-var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
-$IF "%EV%" == ON
+$ifthenE.b (sameas('%EV%','ON'))and(sameas('%V2G%','ON'))
  * (1 + (par_grid_connected(z,h) - 1) $ v(s))
+$endIf.b
 ;
 
-$endIf
+* generation max constraint for storage in zones where UC isn't
+* modelled
+
+eq_store_gen_max_uc_off(s_lim(z,s),h)$(not uc_z(z))..
+var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
+$ifthenE.b (sameas('%EV%','ON'))and(sameas('%V2G%','ON'))
+ * (1 + (par_grid_connected(z,h) - 1) $ v(s))
+$endIf.b
+
+$else.a
+
+eq_store_gen_max_uc_off(s_lim(z,s),h)..
+var_store_gen(h,z,s) =L= var_tot_store_pcap_z(z,s)*store_af(s)
+$ifthenE.b (sameas('%EV%','ON'))and(sameas('%V2G%','ON'))
+ * (1 + (par_grid_connected(z,h) - 1) $ v(s))
+$endIf.b
+;
+
+$endIf.a
 
 

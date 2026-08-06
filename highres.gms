@@ -148,7 +148,47 @@ MWtoGW=1;
 
 $endif
 
+
 $INCLUDE %codefolderpath%/highres_data_input.gms
+
+sets
+gen_lin(z,non_vre)
+ramp_on(z,non_vre)
+mingen_on(z,non_vre)
+ramp_and_mingen(z,non_vre)
+;
+
+
+
+$ifThen "%UC%" == ON
+
+* UC on for all zones by default
+
+set uc_z(z);
+uc_z(z)=YES;
+
+* generators that are represented as continous linear capacity chunks
+
+gen_lin(z,non_vre)=not ((gen_uc_lin(non_vre) or gen_uc_int(non_vre)) and
+    uc_z(z));
+
+* generators that are continous linear chunks can have a mingen of 0
+
+parameter gen_mingen_lin(non_vre);
+gen_mingen_lin(non_vre)=0.;
+
+$else
+
+* if UC is not on all generators are linear chunks
+
+gen_lin(z,non_vre)=YES;
+
+parameter gen_mingen_lin(non_vre);
+gen_mingen_lin(non_vre)=gen_mingen(non_vre);
+gen_mingen_lin("NaturalgasOCGTnew")=0.0;
+gen_mingen_lin("NaturalgasCCGTwithCCSnewOT")=0.0;
+
+$endIf
 
 $IF "%storage%" == ON $INCLUDE %codefolderpath%/highres_storage_setup.gms
 
@@ -169,7 +209,7 @@ RPS
 RPS=RPS/100.
 
 $label optimal1
-
+;
 
 demand(z,h)=demand(z,h)/MWtoGW;
 gen_cap2area(vre)=gen_cap2area(vre)/MWtoGW;
@@ -211,44 +251,6 @@ gen_lim(z,non_vre)=((sum(lt,gen_lim_pcap_z(z,non_vre,lt))
 gen_lim(z,vre)=(sum(r,(area(vre,z,r)+sum(lt,gen_exist_pcap_r(vre,z,r,lt))))>0.);
 
 
-sets
-gen_lin(z,non_vre)
-ramp_on(z,non_vre)
-mingen_on(z,non_vre)
-ramp_and_mingen(z,non_vre)
-;
-
-
-
-$ifThen "%UC%" == ON
-
-* UC on for all zones by default
-
-set uc_z(z);
-uc_z(z)=YES;
-
-* generators that are represented as continous linear capacity chunks
-
-gen_lin(z,non_vre)=not ((gen_uc_lin(non_vre) or gen_uc_int(non_vre)) and
-    uc_z(z));
-
-* generators that are continous linear chunks can have a mingen of 0
-
-parameter gen_mingen_lin(non_vre);
-gen_mingen_lin(non_vre)=0.;
-
-$else
-
-* if UC is not on all generators are linear chunks
-
-gen_lin(z,non_vre)=YES;
-
-parameter gen_mingen_lin(non_vre);
-gen_mingen_lin(non_vre)=gen_mingen(non_vre);
-gen_mingen_lin("NaturalgasOCGTnew")=0.0;
-gen_mingen_lin("NaturalgasCCGTwithCCSnewOT")=0.0;
-
-$endIf
 
 * Sets to ensure ramp/mingen constraints are only created where relevant
 
