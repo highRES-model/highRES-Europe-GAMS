@@ -68,18 +68,13 @@ parameter vre_gen(h,vre,r);
 
 parameter demand(z,h);
 
-$ifThen "%co2_target_extent%" == "all"
-
-scalar co2_target;
-
-$elseif "%co2_target_extent%" == "zonal"
-
-parameter co2_target(z);
-
-$endif
-
 $INCLUDE %datafolderpath%/%psys_scen%_gen.dd
 $INCLUDE %datafolderpath%/trans.dd
+
+* note the necessary sets for aggregated co2 targets
+* are created in python and read in here - they aren't
+* defined in GAMS before this point.
+
 $INCLUDE %datafolderpath%/%esys_scen%_co2_target.dd
 
 * need to switch between agg and not for areas currently
