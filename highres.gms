@@ -855,6 +855,7 @@ $endif.b
 $endif.a
 
 
+$INCLUDE %codefolderpath%/highres_uk_constraints.gms
 
 
 
@@ -950,6 +951,7 @@ $LABEL nolog
 * write result parameters
 
 $INCLUDE %codefolderpath%/highres_results.gms
+$INCLUDE %codefolderpath%/highres_uk_results.gms
 
 * dump data to GDX
 $setEnv GDXCOMPRESS 1

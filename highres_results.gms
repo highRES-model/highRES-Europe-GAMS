@@ -26,6 +26,15 @@ o_store_res_provision(h,s)=sum(s_lim(z,s)$(store_max_res(s) > 0. and uc_z(z)),
 
 $endIf.a
 
+$ifthen "%EV%" == ON
+
+parameter total_ev_car_demand(z);
+
+total_ev_car_demand(z)=sum(h,(par_ev_charging(z,h)*par_vehicles(z)*(1-s_EV_flex))/store_eff_in("EV"))+
+                        sum((h,v(s)),par_vehicles(z)*s_EV_flex*par_driving_demand(z,h,s));
+                        
+$endif
+
 
 $ontext
 
