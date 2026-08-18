@@ -16,7 +16,7 @@ $BATINCLUDE %datafolderpath%/zones.dd
 ;
 
 
-$INCLUDE %datafolderpath%/%weather_yr%_temporal.dd
+$INCLUDE %datafolderpath%/%model_yr%_temporal.dd
 
 alias(h,h_alias);
 
@@ -79,9 +79,9 @@ parameter co2_target(z);
 
 $endif
 
-$INCLUDE %datafolderpath%/%psys_scen%_gen.dd
-$INCLUDE %datafolderpath%/trans.dd
-$INCLUDE %datafolderpath%/%esys_scen%_co2_target.dd
+$INCLUDE %datafolderpath%/%psys_scen%_gen_%model_yr%.dd
+$INCLUDE %datafolderpath%/trans_%model_yr%.dd
+$INCLUDE %datafolderpath%/%esys_scen%_co2_target_%model_yr%.dd
 
 * need to switch between agg and not for areas currently
 

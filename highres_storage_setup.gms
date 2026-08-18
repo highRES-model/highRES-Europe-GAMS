@@ -46,7 +46,7 @@ parameter store_inertia(s);
 parameter store_startupcost(s);
 parameter store_maxramp(s);
 
-$INCLUDE %datafolderpath%/%psys_scen%_store.dd
+$INCLUDE %datafolderpath%/%psys_scen%_store_%model_yr%.dd
 
 $ifThen "%EV%" == ON
 set v(s) / EV /;
