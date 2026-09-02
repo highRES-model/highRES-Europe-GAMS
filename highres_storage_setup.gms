@@ -56,12 +56,12 @@ parameter par_grid_connected(z,h)     fraction of EV grid connected power availa
 parameter par_ev_charging(z,h)        EV immediate charging demand (MWh);
 parameter par_ev_ecap(z)            EV battery energy capacity (MWh);
 parameter par_ev_pcap(z)            EV battery power capacity (MW);
+parameter par_ev_soc_min(z,h)       Minimum state-of-charge;
 
 $INCLUDE %datafolderpath%/ev_data.dd
 
 scalars
 s_EV_flex "fraction of vehicles which are flexible" /%EV_flex%/
-s_ev_soc_min /%EV_soc_min%/
 s_ev_soc_max /%EV_soc_max%/
 ;
 
@@ -183,7 +183,7 @@ $endIf
 
 $ifThen "%EV%" == ON
 * state of charge lower and upper limit
-var_store_level.LO(h,z,"EV") = s_ev_soc_min*par_ev_ecap(z)*s_EV_flex;
+var_store_level.LO(h,z,"EV") = par_ev_soc_min(z,h)*par_ev_ecap(z)*s_EV_flex;
 var_store_level.UP(h,z,"EV") = s_ev_soc_max*par_ev_ecap(z)*s_EV_flex;
 
 * disable bidirectional charging when only modelling flexible charging
