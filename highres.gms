@@ -83,18 +83,18 @@ $setglobal GWatts "YES"
 $setglobal storage "ON"
 $setglobal hydrores "ON"
 $setglobal sensitivity "OFF"
-$setglobal UC "OFF"
-$setglobal store_uc "OFF"
+$setglobal UC "ON"
+$setglobal store_uc "ON"
 
 ** Unit comittment switches
 
-$setglobal f_res "OFF"
-$setglobal f_res_mode "fixed"
+$setglobal f_res "ON"
+$setglobal f_res_mode "dynamic"
 
 * Case options
 
 $setglobal co2_target_type "budget"
-$setglobal co2_target_extent "zonal"
+$setglobal co2_target_extent "user"
 $setglobal sense_run "None"
 $setglobal esys_scen "BASE"
 $setglobal psys_scen "BASE"
@@ -118,11 +118,13 @@ $setglobal hydro_res_min "0.5"
 $set pen_gen "OFF"
 $setglobal pgen "20.0"
 
-* Caution: EV is not implemented for UC
-$setglobal EV "OFF"
+$setglobal EV "ON"
 $ifThen "%EV%" == ON
 $setglobal EV_flex "0"
 $setglobal V2G "OFF"
+$setglobal EV_pcap "0.011"
+$setglobal EV_soc_min "0.2"
+$setglobal EV_soc_max "0.8"
 $endif
 
 * Disabled switches
